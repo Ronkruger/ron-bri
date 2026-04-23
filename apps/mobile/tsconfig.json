@@ -9,8 +9,6 @@
     "noEmit": true,
     "rootDir": ".",
     "outDir": "dist",
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
       "@ronbri/types": ["../../packages/types/src/index.ts"],
       "@ronbri/api-client": ["../../packages/api-client/src/index.ts"]
