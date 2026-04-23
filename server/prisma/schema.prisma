@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id
+  username     String   @unique
+  displayName  String
+  role         Role
+  theme        String
+  avatar       String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  dateEvents       DateEvent[]
+  sentInvites      DateInvite[] @relation("SentInvites")
+  receivedInvites  DateInvite[] @relation("ReceivedInvites")
+  messages         Message[]
+}
+
+model DateEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  emoji       String?
+  imageUrl    String?
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model DateInvite {
+  id         String       @id @default(cuid())
+  type       InviteType
+  title      String
+  message    String
+  emojis     String[]
+  gifUrl     String?
+  imageUrl   String?
+  senderId   String
+  sender     User         @relation("SentInvites", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User         @relation("ReceivedInvites", fields: [receiverId], references: [id])
+  status     InviteStatus @default(PENDING)
+  seenAt     DateTime?
+  createdAt  DateTime     @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String?
+  imageUrl  String?
+  gifUrl    String?
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+}
+
+model Relationship {
+  id        String   @id @default("singleton")
+  startDate DateTime
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  BOY
+  GIRL
+}
+
+enum InviteType {
+  OUTSIDE
+  FOOD
+  BONDING
+  CUSTOM
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}

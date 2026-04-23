@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #3b82f6;
+  --color-light: #eff6ff;
+  --color-accent: #1d4ed8;
+  --color-muted: #bfdbfe;
+}
+
+[data-theme="girl"] {
+  --color-primary: #eab308;
+  --color-light: #fefce8;
+  --color-accent: #a16207;
+  --color-muted: #fef08a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Nunito", system-ui, sans-serif;
+  background-color: #fafafa;
+  color: #1f2937;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* react-big-calendar theme overrides */
+.rbc-toolbar button {
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+}
