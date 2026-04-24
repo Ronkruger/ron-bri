@@ -2,6 +2,8 @@
   "extends": "../../packages/tsconfig/react.json",
   "compilerOptions": {
     "noEmit": true,
+    "rootDir": "../../",
+    "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
       "@ronbri/types": ["../../packages/types/src/index.ts"],
