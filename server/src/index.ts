@@ -25,9 +25,24 @@ const io = initSocket(httpServer);
 setIo(io);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ?? "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".railway.app")
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );
