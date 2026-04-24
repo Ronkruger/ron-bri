@@ -3,11 +3,11 @@
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "paths": {
       "@ronbri/types": ["../packages/types/src/index.ts"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "prisma/seed.ts"],
   "exclude": ["node_modules", "dist"]
 }

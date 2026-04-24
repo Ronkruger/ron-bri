@@ -3,7 +3,7 @@ builder = "NIXPACKS"
 buildCommand = "npm run build --workspace=server"
 
 [deploy]
-startCommand = "npm run start --workspace=server"
+startCommand = "npx prisma migrate deploy && node dist/prisma/seed.js && npm run start --workspace=server"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
