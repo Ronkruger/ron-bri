@@ -1,8 +1,7 @@
 {
   "extends": "../../packages/tsconfig/react.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist",
+    "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
       "@ronbri/types": ["../../packages/types/src/index.ts"],
