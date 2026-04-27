@@ -6,10 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...");
 
+  const ronPasswordHash = bcrypt.hashSync("babi", 12);
+  const briPasswordHash = bcrypt.hashSync("babi", 12);
+
   // Upsert users
   const ronron = await prisma.user.upsert({
     where: { id: "user_boy" },
-    update: {},
+    update: {
+      username: "ronron",
+      displayName: "Ron Ron",
+      role: Role.BOY,
+      theme: "blue",
+      avatar: "/avatars/boy.png",
+      passwordHash: ronPasswordHash,
+    },
     create: {
       id: "user_boy",
       username: "ronron",
@@ -17,13 +27,20 @@ async function main() {
       role: Role.BOY,
       theme: "blue",
       avatar: "/avatars/boy.png",
-      passwordHash: bcrypt.hashSync("babi", 12),
+      passwordHash: ronPasswordHash,
     },
   });
 
   const bribri = await prisma.user.upsert({
     where: { id: "user_girl" },
-    update: {},
+    update: {
+      username: "bribri",
+      displayName: "BriBri",
+      role: Role.GIRL,
+      theme: "yellow",
+      avatar: "/avatars/girl.png",
+      passwordHash: briPasswordHash,
+    },
     create: {
       id: "user_girl",
       username: "bribri",
@@ -31,7 +48,7 @@ async function main() {
       role: Role.GIRL,
       theme: "yellow",
       avatar: "/avatars/girl.png",
-      passwordHash: bcrypt.hashSync("babi", 12),
+      passwordHash: briPasswordHash,
     },
   });
 
