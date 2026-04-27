@@ -1,4 +1,4 @@
-import { apiClient, getAccessToken } from "./axios";
+import { BASE_URL, apiClient, getAccessToken } from "./axios";
 import type {
   AuthResponse,
   User,
@@ -106,10 +106,6 @@ export const relationshipApi = {
 export const aiApi = {
   // Returns the raw fetch Response so the caller can stream it
   chat: (payload: AIChatPayload): Promise<Response> => {
-    const BASE_URL =
-      typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
-        ? process.env.EXPO_PUBLIC_API_URL
-        : (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:3001";
     return fetch(`${BASE_URL}/api/ai/chat`, {
       method: "POST",
       credentials: "include",

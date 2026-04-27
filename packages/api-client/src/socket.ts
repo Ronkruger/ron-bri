@@ -1,10 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { getAccessToken } from "./axios";
-
-const BASE_URL =
-  typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
-    ? process.env.EXPO_PUBLIC_API_URL
-    : (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:3001";
+import { BASE_URL, getAccessToken } from "./axios";
 
 let socket: Socket | null = null;
 

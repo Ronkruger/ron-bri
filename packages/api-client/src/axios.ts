@@ -1,9 +1,25 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-const BASE_URL =
-  typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
-    ? process.env.EXPO_PUBLIC_API_URL
-    : (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:3001";
+const resolveBaseUrl = (): string => {
+  const raw =
+    (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
+      ? process.env.EXPO_PUBLIC_API_URL
+      : (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:3001")
+      .trim();
+
+  let normalized = raw;
+
+  if (!/^https?:\/\//i.test(normalized)) {
+    const host = normalized.replace(/^\/+/, "");
+    normalized = /^(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(host)
+      ? `http://${host}`
+      : `https://${host}`;
+  }
+
+  return normalized.replace(/\/+$/, "").replace(/\/api$/i, "");
+};
+
+export const BASE_URL = resolveBaseUrl();
 
 let accessToken: string | null = null;
 
