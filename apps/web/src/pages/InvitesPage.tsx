@@ -279,7 +279,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
                 />
               </label>
               <label className="px-4 py-2 rounded-2xl bg-gray-100 font-bold text-gray-600 cursor-pointer">
-                📷 Photo {imageUrl && "✓"}
+                🖼️ Gallery {imageUrl && "✓"}
                 <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
               </label>
             </div>

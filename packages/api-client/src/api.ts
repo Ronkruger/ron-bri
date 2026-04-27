@@ -28,6 +28,9 @@ export const authApi = {
 
   me: () =>
     apiClient.get<User>("/auth/me").then((r) => r.data),
+
+  updateAvatar: (avatar: string) =>
+    apiClient.patch<User>("/auth/me/avatar", { avatar }).then((r) => r.data),
 };
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────

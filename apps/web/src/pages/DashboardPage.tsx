@@ -65,10 +65,25 @@ const DashboardPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-black text-gray-800">
-          Hey {user?.displayName}! {user?.role === "BOY" ? "💙" : "💛"}
-        </h1>
-        <p className="text-gray-500 font-medium mt-1">Here's your love dashboard 🌸</p>
+        <div className="flex items-center gap-4">
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.displayName}
+              className="w-16 h-16 rounded-[1.5rem] object-cover border border-white shadow-md"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-[1.5rem] bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black text-2xl shadow-md">
+              {user?.displayName?.charAt(0) ?? "R"}
+            </div>
+          )}
+          <div>
+            <h1 className="text-3xl font-black text-gray-800">
+              Hey {user?.displayName}! {user?.role === "BOY" ? "💙" : "💛"}
+            </h1>
+            <p className="text-gray-500 font-medium mt-1">Here's your love dashboard 🌸</p>
+          </div>
+        </div>
       </motion.div>
 
       {/* Days Together Counter */}
@@ -135,14 +150,27 @@ const DashboardPage: React.FC = () => {
                     : "border-yellow-400"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-gray-800">
-                      {event.emoji} {event.title}
-                    </div>
-                    {event.description && (
-                      <div className="text-sm text-gray-500 mt-0.5">{event.description}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {event.createdBy?.avatar ? (
+                      <img
+                        src={event.createdBy.avatar}
+                        alt={event.createdBy.displayName}
+                        className="w-11 h-11 rounded-2xl object-cover border border-gray-100"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black shrink-0">
+                        {event.createdBy?.displayName?.charAt(0) ?? "R"}
+                      </div>
                     )}
+                    <div className="min-w-0">
+                      <div className="font-bold text-gray-800 truncate">
+                        {event.emoji} {event.title}
+                      </div>
+                      {event.description && (
+                        <div className="text-sm text-gray-500 mt-0.5 truncate">{event.description}</div>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm font-semibold text-gray-400 ml-4 whitespace-nowrap">
                     {format(new Date(event.date), "MMM d")}

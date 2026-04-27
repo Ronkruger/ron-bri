@@ -277,11 +277,11 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-500">Photo (optional)</span>
               <label className="ml-auto text-sm px-3 py-1 rounded-xl bg-gray-100 font-semibold cursor-pointer">
-                {uploading ? "Uploading..." : imageUrl ? "Change" : "Upload"}
+                🖼️ {uploading ? "Uploading..." : imageUrl ? "Change" : "Upload"}
                 <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
               </label>
               <label className="text-sm px-3 py-1 rounded-xl bg-gray-100 font-semibold cursor-pointer">
-                Camera
+                📸 Camera
                 <input
                   type="file"
                   accept="image/*"

@@ -12,6 +12,10 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const updateAvatarSchema = z.object({
+  avatar: z.string().url(),
+});
+
 const issueAccessToken = (userId: string, role: string) => {
   const secret = process.env.JWT_SECRET!;
   return jwt.sign({ userId, role }, secret, { expiresIn: "15m" });
@@ -116,6 +120,27 @@ router.get("/me", requireAuth, async (req: AuthRequest, res: Response): Promise<
       res.status(404).json({ error: "Not Found" });
       return;
     }
+    const { passwordHash: _, ...safeUser } = user;
+    res.json(safeUser);
+  } catch {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /api/auth/me/avatar
+router.patch("/me/avatar", requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const parsed = updateAvatarSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Bad Request", message: "Valid avatar URL required" });
+      return;
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: { avatar: parsed.data.avatar },
+    });
+
     const { passwordHash: _, ...safeUser } = user;
     res.json(safeUser);
   } catch {

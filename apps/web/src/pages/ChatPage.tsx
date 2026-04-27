@@ -215,7 +215,11 @@ const ChatPage: React.FC = () => {
           >
             GIF
           </button>
-          <label className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors">
+          <label
+            aria-label="Take photo"
+            title="Take photo"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors"
+          >
             📸
             <input
               type="file"
@@ -226,8 +230,12 @@ const ChatPage: React.FC = () => {
             />
           </label>
           {/* Image */}
-          <label className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors">
-            📷
+          <label
+            aria-label="Choose from gallery"
+            title="Choose from gallery"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors"
+          >
+            🖼️
             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </label>
           {/* Text */}
@@ -262,6 +270,7 @@ const ChatPage: React.FC = () => {
 const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message, isOwn }) => {
   const [hovered, setHovered] = useState(false);
   const d = new Date(message.createdAt);
+  const avatarFallback = message.sender?.displayName?.charAt(0) ?? "R";
 
   return (
     <motion.div
@@ -269,6 +278,18 @@ const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message
       animate={{ opacity: 1, x: 0 }}
       className={`flex mb-2 ${isOwn ? "justify-end" : "justify-start"}`}
     >
+      {!isOwn &&
+        (message.sender?.avatar ? (
+          <img
+            src={message.sender.avatar}
+            alt={message.sender.displayName}
+            className="w-9 h-9 rounded-2xl object-cover border border-gray-100 mr-2 self-end"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black mr-2 self-end">
+            {avatarFallback}
+          </div>
+        ))}
       <div
         className={`max-w-xs md:max-w-sm lg:max-w-md`}
         onMouseEnter={() => setHovered(true)}
@@ -308,6 +329,18 @@ const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message
           )}
         </div>
       </div>
+      {isOwn &&
+        (message.sender?.avatar ? (
+          <img
+            src={message.sender.avatar}
+            alt={message.sender.displayName}
+            className="w-9 h-9 rounded-2xl object-cover border border-gray-100 ml-2 self-end"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black ml-2 self-end">
+            {avatarFallback}
+          </div>
+        ))}
     </motion.div>
   );
 };

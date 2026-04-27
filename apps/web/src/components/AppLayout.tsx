@@ -10,6 +10,7 @@ const navItems = [
   { to: "/chat", label: "Chat", emoji: "💬", end: false },
   { to: "/calendar", label: "Calendar", emoji: "📅", end: false },
   { to: "/invites", label: "Invites", emoji: "💌", end: false },
+  { to: "/profile", label: "Profile", emoji: "👤", end: false },
 ];
 
 const AppLayout: React.FC = () => {
@@ -27,10 +28,21 @@ const AppLayout: React.FC = () => {
       {/* Sidebar — desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm">
         <div className="p-6 border-b border-gray-100">
-          <div className="text-2xl font-black text-gray-800">RonBri</div>
-          <div className="text-sm text-gray-400 mt-1">
-            {user?.displayName}{" "}
-            <span className="inline-block w-2 h-2 rounded-full bg-green-400 ml-1" />
+          <div className="flex items-center gap-3">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-2xl object-cover border border-gray-100" />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black text-lg">
+                {user?.displayName?.charAt(0) ?? "R"}
+              </div>
+            )}
+            <div>
+              <div className="text-2xl font-black text-gray-800">RonBri</div>
+              <div className="text-sm text-gray-400 mt-1">
+                {user?.displayName}{" "}
+                <span className="inline-block w-2 h-2 rounded-full bg-green-400 ml-1" />
+              </div>
+            </div>
           </div>
         </div>
 
