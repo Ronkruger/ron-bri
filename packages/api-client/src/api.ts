@@ -84,9 +84,7 @@ export const uploadApi = {
     const form = new FormData();
     form.append("image", file);
     return apiClient
-      .post<{ url: string; publicId: string }>("/upload/image", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
+      .post<{ url: string; publicId: string }>("/upload/image", form)
       .then((r) => r.data);
   },
 
