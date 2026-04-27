@@ -17,9 +17,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const bootstrap = useCallback(async () => {
     try {
-      const { data: authData } = await import("axios").then(() =>
-        import("@ronbri/api-client").then((m) => m.apiClient.post<{ accessToken: string }>("/auth/refresh"))
-      );
+      const authData = await authApi.refresh();
       setAccessToken(authData.accessToken);
       const me = await authApi.me();
       setUser(me);
