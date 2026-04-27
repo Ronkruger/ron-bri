@@ -7,7 +7,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,
-    "rootDir": ".",
+    "rootDir": "../../",
     "outDir": "dist",
     "paths": {
       "@ronbri/types": ["../../packages/types/src/index.ts"],

@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig/react.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "paths": {
+      "@ronbri/types": ["../types/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

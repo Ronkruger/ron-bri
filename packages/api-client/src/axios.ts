@@ -119,7 +119,7 @@ const request = async <T>(
           ? body
           : headers["Content-Type"]?.includes("application/json")
             ? JSON.stringify(body)
-            : (body as BodyInit),
+            : (body as never),
   });
 
   const requestUrl = path;
@@ -136,8 +136,11 @@ const request = async <T>(
       return request<T>(method, path, body, { ...options, _retry: true });
     } catch (refreshError) {
       setAccessToken(null);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("auth:logout"));
+      const eventTarget = globalThis as typeof globalThis & {
+        dispatchEvent?: (event: Event) => boolean;
+      };
+      if (typeof eventTarget.dispatchEvent === "function") {
+        eventTarget.dispatchEvent(new Event("auth:logout"));
       }
       throw refreshError;
     }

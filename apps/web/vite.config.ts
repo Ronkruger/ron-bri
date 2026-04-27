@@ -4,6 +4,35 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("react-big-calendar") || id.includes("date-fns")) {
+            return "calendar-vendor";
+          }
+
+          if (id.includes("@emoji-mart") || id.includes("emoji-mart")) {
+            return "emoji-vendor";
+          }
+
+          if (id.includes("lottie-react") || id.includes("lottie-web")) {
+            return "lottie-vendor";
+          }
+
+          if (id.includes("@tanstack/react-query")) {
+            return "query-vendor";
+          }
+
+          if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
+            return "react-vendor";
+          }
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
