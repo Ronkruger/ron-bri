@@ -215,6 +215,16 @@ const ChatPage: React.FC = () => {
           >
             GIF
           </button>
+          <label className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors">
+            📸
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+          </label>
           {/* Image */}
           <label className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors">
             📷
