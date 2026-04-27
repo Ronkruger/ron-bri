@@ -8,17 +8,26 @@ router.use(requireAuth);
 // POST /api/upload/image
 router.post(
   "/image",
-  upload.single("image"),
   (req: Request, res: Response): void => {
-    if (!req.file) {
-      res.status(400).json({ error: "No file uploaded" });
-      return;
-    }
-    const file = req.file as Express.Multer.File & {
-      path: string;
-      filename: string;
-    };
-    res.json({ url: file.path, publicId: file.filename });
+    upload.single("image")(req, res, (error: unknown) => {
+      if (error) {
+        const message = error instanceof Error ? error.message : "Image upload failed";
+        console.error("Upload error:", error);
+        res.status(500).json({ error: "Upload failed", message });
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({ error: "No file uploaded", message: "Please choose an image first" });
+        return;
+      }
+
+      const file = req.file as Express.Multer.File & {
+        path: string;
+        filename: string;
+      };
+      res.json({ url: file.path, publicId: file.filename });
+    });
   }
 );
 

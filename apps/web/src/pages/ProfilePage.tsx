@@ -19,8 +19,15 @@ const ProfilePage: React.FC = () => {
       const { url } = await uploadApi.image(file);
       const updatedUser = await authApi.updateAvatar(url);
       setCurrentUser(updatedUser);
-    } catch {
-      setError("Could not update your profile photo. Try again.");
+    } catch (caughtError) {
+      const message =
+        typeof caughtError === "object" &&
+        caughtError !== null &&
+        "response" in caughtError &&
+        typeof (caughtError as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (caughtError as { response?: { data?: { message?: string } } }).response!.data!.message!
+          : "Could not update your profile photo. Try again.";
+      setError(message);
     } finally {
       setUploading(false);
       event.target.value = "";
