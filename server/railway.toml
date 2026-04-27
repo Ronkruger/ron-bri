@@ -3,7 +3,7 @@ builder = "NIXPACKS"
 buildCommand = "npm run build --workspace=server"
 
 [deploy]
-startCommand = "npx prisma db push --schema=server/prisma/schema.prisma && cd server && npx ts-node prisma/seed.ts && cd .. && npm run start --workspace=server"
+startCommand = "npm run start --workspace=server"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
