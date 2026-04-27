@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import { format, differenceInDays, startOfDay } from "date-fns";
 import { invitesApi, uploadApi, giphyApi } from "@ronbri/api-client";
 import type { DateInvite, CreateInvitePayload } from "@ronbri/types";
 import { InviteType, InviteStatus } from "@ronbri/types";
@@ -16,17 +16,45 @@ const INVITE_TYPES = [
   { type: InviteType.CUSTOM, emoji: "✨", label: "Custom" },
 ];
 
-const STATUS_COLORS: Record<InviteStatus, string> = {
-  [InviteStatus.PENDING]: "bg-yellow-100 text-yellow-700",
-  [InviteStatus.ACCEPTED]: "bg-green-100 text-green-700",
-  [InviteStatus.DECLINED]: "bg-red-100 text-red-600",
-};
+interface BadgeInfo { label: string; cls: string; extra?: string; }
+
+function getDisplayBadge(
+  invite: DateInvite & { scheduledDate?: string | null; rescheduleDate?: string | null }
+): BadgeInfo {
+  const { status, scheduledDate, rescheduleDate } = invite;
+
+  if (status === InviteStatus.RESCHEDULED) {
+    return {
+      label: "Rescheduled 📅",
+      cls: "bg-purple-100 text-purple-700",
+      extra: rescheduleDate ? `New date: ${format(new Date(rescheduleDate), "MMM d, yyyy")}` : undefined,
+    };
+  }
+
+  if (status === InviteStatus.ACCEPTED && scheduledDate) {
+    const today = startOfDay(new Date());
+    const eventDay = startOfDay(new Date(scheduledDate));
+    const diff = differenceInDays(eventDay, today);
+    if (diff < 0) return { label: "Done 🥰", cls: "bg-gray-100 text-gray-500", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
+    if (diff === 0) return { label: "Ongoing! 🎉", cls: "bg-green-200 text-green-800", extra: "Today!" };
+    return { label: `${diff} day${diff !== 1 ? "s" : ""} left ✨`, cls: "bg-blue-100 text-blue-700", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
+  }
+
+  const map: Record<string, BadgeInfo> = {
+    PENDING: { label: "Pending ⏳", cls: "bg-yellow-100 text-yellow-700" },
+    ACCEPTED: { label: "Accepted 💚", cls: "bg-green-100 text-green-700" },
+    DECLINED: { label: "Declined 💔", cls: "bg-red-100 text-red-600" },
+    RESCHEDULED: { label: "Rescheduled 📅", cls: "bg-purple-100 text-purple-700" },
+  };
+  return map[status] ?? { label: status, cls: "bg-gray-100 text-gray-500" };
+}
 
 const InvitesPage: React.FC = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"inbox" | "sent">("inbox");
   const [creating, setCreating] = useState(false);
+  const [rescheduling, setRescheduling] = useState<{ id: string; date: string } | null>(null);
 
   const { data: inbox = [] } = useQuery<DateInvite[]>({
     queryKey: ["invites", "inbox"],
@@ -39,9 +67,12 @@ const InvitesPage: React.FC = () => {
   });
 
   const respondMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "ACCEPTED" | "DECLINED" }) =>
-      invitesApi.respond(id, { status: status as any }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["invites"] }),
+    mutationFn: ({ id, status, rescheduleDate }: { id: string; status: "ACCEPTED" | "DECLINED" | "RESCHEDULED"; rescheduleDate?: string }) =>
+      invitesApi.respond(id, { status: status as any, rescheduleDate } as any),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invites"] });
+      setRescheduling(null);
+    },
   });
 
   const createMutation = useMutation({
@@ -90,58 +121,115 @@ const InvitesPage: React.FC = () => {
             No invites here yet 💌
           </div>
         ) : (
-          list.map((invite) => (
-            <motion.div
-              key={invite.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl shadow-sm p-5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">
-                      {INVITE_TYPES.find((t) => t.type === invite.type)?.emoji}
+          list.map((invite) => {
+            const inv = invite as DateInvite & { scheduledDate?: string | null; rescheduleDate?: string | null };
+            const badge = getDisplayBadge(inv);
+            const isReschedulingThis = rescheduling?.id === invite.id;
+            return (
+              <motion.div
+                key={invite.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl shadow-sm p-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">
+                        {INVITE_TYPES.find((t) => t.type === invite.type)?.emoji}
+                      </span>
+                      <span className="font-black text-gray-800">{invite.title}</span>
+                    </div>
+                    <p className="text-gray-600 text-sm leading-relaxed">{invite.message}</p>
+                    {invite.emojis.length > 0 && (
+                      <div className="mt-2 text-lg">{invite.emojis.join(" ")}</div>
+                    )}
+                    {invite.gifUrl && (
+                      <img src={invite.gifUrl} alt="gif" className="rounded-2xl mt-3 max-h-32 object-cover" />
+                    )}
+                    {invite.imageUrl && (
+                      <img src={invite.imageUrl} alt="" className="rounded-2xl mt-3 max-h-32 object-cover" />
+                    )}
+                    <div className="text-xs text-gray-400 mt-2">
+                      {format(new Date(invite.createdAt), "MMM d, h:mm a")}
+                    </div>
+                    {inv.scheduledDate && invite.status !== InviteStatus.RESCHEDULED && (
+                      <div className="text-xs text-indigo-500 font-semibold mt-1">
+                        📅 {format(new Date(inv.scheduledDate), "MMM d, yyyy")}
+                      </div>
+                    )}
+                    {invite.status === InviteStatus.RESCHEDULED && inv.rescheduleDate && (
+                      <div className="text-xs text-purple-600 font-semibold mt-1">
+                        🔄 New date: {format(new Date(inv.rescheduleDate), "MMM d, yyyy")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>
+                      {badge.label}
                     </span>
-                    <span className="font-black text-gray-800">{invite.title}</span>
-                  </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{invite.message}</p>
-                  {invite.emojis.length > 0 && (
-                    <div className="mt-2 text-lg">{invite.emojis.join(" ")}</div>
-                  )}
-                  {invite.gifUrl && (
-                    <img src={invite.gifUrl} alt="gif" className="rounded-2xl mt-3 max-h-32 object-cover" />
-                  )}
-                  {invite.imageUrl && (
-                    <img src={invite.imageUrl} alt="" className="rounded-2xl mt-3 max-h-32 object-cover" />
-                  )}
-                  <div className="text-xs text-gray-400 mt-2">
-                    {format(new Date(invite.createdAt), "MMM d, h:mm a")}
+                    {badge.extra && (
+                      <span className="text-xs text-gray-400 text-right">{badge.extra}</span>
+                    )}
                   </div>
                 </div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${STATUS_COLORS[invite.status]}`}>
-                  {invite.status}
-                </span>
-              </div>
-              {/* Accept/Decline for inbox & pending */}
-              {tab === "inbox" && invite.status === InviteStatus.PENDING && (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={() => respondMutation.mutate({ id: invite.id, status: "ACCEPTED" })}
-                    className="flex-1 py-2 rounded-2xl bg-green-100 text-green-700 font-bold hover:bg-green-200"
-                  >
-                    💚 Accept
-                  </button>
-                  <button
-                    onClick={() => respondMutation.mutate({ id: invite.id, status: "DECLINED" })}
-                    className="flex-1 py-2 rounded-2xl bg-red-50 text-red-500 font-bold hover:bg-red-100"
-                  >
-                    💔 Decline
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          ))
+                {/* Actions for inbox + PENDING */}
+                {tab === "inbox" && invite.status === InviteStatus.PENDING && (
+                  <div className="mt-4">
+                    {!isReschedulingThis ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => respondMutation.mutate({ id: invite.id, status: "ACCEPTED" })}
+                          disabled={respondMutation.isPending}
+                          className="flex-1 py-2 rounded-2xl bg-green-100 text-green-700 font-bold hover:bg-green-200 text-sm disabled:opacity-50"
+                        >
+                          💚 Accept
+                        </button>
+                        <button
+                          onClick={() => respondMutation.mutate({ id: invite.id, status: "DECLINED" })}
+                          disabled={respondMutation.isPending}
+                          className="flex-1 py-2 rounded-2xl bg-red-50 text-red-500 font-bold hover:bg-red-100 text-sm disabled:opacity-50"
+                        >
+                          💔 Decline
+                        </button>
+                        <button
+                          onClick={() => setRescheduling({ id: invite.id, date: "" })}
+                          className="flex-1 py-2 rounded-2xl bg-purple-50 text-purple-600 font-bold hover:bg-purple-100 text-sm"
+                        >
+                          📅 Reschedule
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Pick new date</label>
+                        <input
+                          type="date"
+                          value={rescheduling.date}
+                          onChange={(e) => setRescheduling({ id: invite.id, date: e.target.value })}
+                          className="w-full rounded-2xl border border-gray-200 px-4 py-2 font-semibold outline-none focus:border-[var(--color-primary)]"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setRescheduling(null)}
+                            className="flex-1 py-2 rounded-2xl bg-gray-100 text-gray-500 font-bold text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            disabled={!rescheduling.date || respondMutation.isPending}
+                            onClick={() => respondMutation.mutate({ id: invite.id, status: "RESCHEDULED", rescheduleDate: rescheduling.date })}
+                            className="flex-1 py-2 rounded-2xl bg-purple-500 text-white font-bold hover:bg-purple-600 disabled:opacity-50 text-sm"
+                          >
+                            {respondMutation.isPending ? "Saving..." : "Confirm 📅"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })
         )}
       </div>
 
@@ -172,6 +260,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
   const [emojis, setEmojis] = useState<string[]>([]);
   const [gifUrl, setGifUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
   const [gifOpen, setGifOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -182,6 +271,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
     setEmojis([]);
     setGifUrl("");
     setImageUrl("");
+    setScheduledDate("");
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -264,6 +354,18 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
                 ))}
               </div>
             )}
+            {/* Scheduled Date */}
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                📅 Schedule for (optional)
+              </label>
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full rounded-2xl border border-gray-200 px-4 py-3 font-semibold outline-none focus:border-[var(--color-primary)]"
+              />
+            </div>
             <div className="flex gap-2">
               <button onClick={() => setGifOpen(true)} className="px-4 py-2 rounded-2xl bg-gray-100 font-bold text-gray-600">
                 GIF {gifUrl && "✓"}
@@ -288,7 +390,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
             <div className="flex gap-3 mt-2">
               <button onClick={handleClose} className="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold">Cancel</button>
               <button
-                onClick={() => onSubmit({ type, title, message, emojis, gifUrl: gifUrl || undefined, imageUrl: imageUrl || undefined })}
+                onClick={() => onSubmit({ type, title, message, emojis, gifUrl: gifUrl || undefined, imageUrl: imageUrl || undefined, scheduledDate: scheduledDate || undefined })}
                 disabled={!title || !message || loading}
                 className="flex-1 py-3 rounded-2xl bg-[var(--color-primary)] text-white font-black disabled:opacity-50"
               >

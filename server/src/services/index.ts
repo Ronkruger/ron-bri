@@ -70,6 +70,7 @@ export const inviteService = {
     emojis: string[];
     gifUrl?: string;
     imageUrl?: string;
+    scheduledDate?: string;
   }) => {
     const receiverId = senderId === "user_boy" ? "user_girl" : "user_boy";
     return prisma.dateInvite.create({
@@ -80,6 +81,7 @@ export const inviteService = {
         emojis: data.emojis,
         gifUrl: data.gifUrl,
         imageUrl: data.imageUrl,
+        scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
         senderId,
         receiverId,
       },
@@ -107,10 +109,13 @@ export const inviteService = {
       include: { sender: true, receiver: true },
     }),
 
-  respond: (id: string, status: "ACCEPTED" | "DECLINED") =>
+  respond: (id: string, status: "ACCEPTED" | "DECLINED" | "RESCHEDULED", rescheduleDate?: string) =>
     prisma.dateInvite.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        rescheduleDate: rescheduleDate ? new Date(rescheduleDate) : undefined,
+      },
       include: { sender: true, receiver: true },
     }),
 

@@ -18,6 +18,7 @@ const STATUS_COLORS: Record<InviteStatus, { bg: string; text: string }> = {
   [InviteStatus.PENDING]: { bg: "#FEF9C3", text: "#A16207" },
   [InviteStatus.ACCEPTED]: { bg: "#DCFCE7", text: "#166534" },
   [InviteStatus.DECLINED]: { bg: "#FEE2E2", text: "#DC2626" },
+  [InviteStatus.RESCHEDULED]: { bg: "#F3E8FF", text: "#7C3AED" },
 };
 
 const INVITE_EMOJIS: Record<string, string> = {

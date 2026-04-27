@@ -14,10 +14,12 @@ const createSchema = z.object({
   emojis: z.array(z.string()).default([]),
   gifUrl: z.string().url().optional(),
   imageUrl: z.string().url().optional(),
+  scheduledDate: z.string().optional(),
 });
 
 const respondSchema = z.object({
-  status: z.enum(["ACCEPTED", "DECLINED"]),
+  status: z.enum(["ACCEPTED", "DECLINED", "RESCHEDULED"]),
+  rescheduleDate: z.string().optional(),
 });
 
 // POST /api/invites
@@ -77,7 +79,7 @@ router.patch("/:id/respond", async (req: AuthRequest, res: Response): Promise<vo
       res.status(403).json({ error: "Forbidden" });
       return;
     }
-    const updated = await inviteService.respond(req.params.id, parsed.data.status);
+    const updated = await inviteService.respond(req.params.id, parsed.data.status, parsed.data.rescheduleDate);
     // Notify sender
     const io = getIo();
     if (io) {

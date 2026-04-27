@@ -16,6 +16,7 @@ export enum InviteStatus {
   PENDING = "PENDING",
   ACCEPTED = "ACCEPTED",
   DECLINED = "DECLINED",
+  RESCHEDULED = "RESCHEDULED",
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -55,6 +56,8 @@ export interface DateInvite {
   receiverId: string;
   receiver: User;
   status: InviteStatus;
+  scheduledDate: string | null;
+  rescheduleDate: string | null;
   seenAt: string | null;
   createdAt: string;
 }
@@ -141,10 +144,12 @@ export interface CreateInvitePayload {
   emojis: string[];
   gifUrl?: string;
   imageUrl?: string;
+  scheduledDate?: string;
 }
 
 export interface RespondInvitePayload {
-  status: InviteStatus.ACCEPTED | InviteStatus.DECLINED;
+  status: InviteStatus.ACCEPTED | InviteStatus.DECLINED | InviteStatus.RESCHEDULED;
+  rescheduleDate?: string;
 }
 
 // ─── Calendar Payloads ────────────────────────────────────────────────────────

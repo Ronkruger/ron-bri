@@ -50,9 +50,11 @@ model DateInvite {
   sender     User         @relation("SentInvites", fields: [senderId], references: [id])
   receiverId String
   receiver   User         @relation("ReceivedInvites", fields: [receiverId], references: [id])
-  status     InviteStatus @default(PENDING)
-  seenAt     DateTime?
-  createdAt  DateTime     @default(now())
+  status         InviteStatus @default(PENDING)
+  scheduledDate  DateTime?
+  rescheduleDate DateTime?
+  seenAt         DateTime?
+  createdAt      DateTime     @default(now())
 }
 
 model Message {
@@ -88,4 +90,5 @@ enum InviteStatus {
   PENDING
   ACCEPTED
   DECLINED
+  RESCHEDULED
 }
