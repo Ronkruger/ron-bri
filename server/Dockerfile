@@ -30,9 +30,10 @@ COPY server ./server
 
 RUN npm ci --omit=dev --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
 
-# Copy compiled output from builder
+# Copy compiled output and prisma generated client from builder
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3001
 
