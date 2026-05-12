@@ -53,6 +53,12 @@ export const initSocket = (httpServer: http.Server): Server => {
       }
     });
 
+    // ── heart:send ────────────────────────────────────────────────────────────
+    socket.on("heart:send", () => {
+      const receiverId = userId === "user_boy" ? "user_girl" : "user_boy";
+      io.to(`user:${receiverId}`).emit("heart:received", { fromUserId: userId });
+    });
+
     socket.on("disconnect", () => {
       console.log(`🔌 Socket disconnected: ${userId}`);
     });

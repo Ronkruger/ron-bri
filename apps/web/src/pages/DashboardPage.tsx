@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import CountUp from "react-countup";
 import confetti from "canvas-confetti";
 import {
@@ -12,12 +12,22 @@ import {
   setYear,
 } from "date-fns";
 import { relationshipApi, calendarApi } from "@ronbri/api-client";
+import { getSocket, connectSocket } from "@ronbri/api-client";
 import { useAuth } from "../contexts/AuthContext";
 import type { DateEvent } from "@ronbri/types";
+
+interface FloatingHeart {
+  id: number;
+  x: number;
+}
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const confettiFired = useRef(false);
+  const [heartSent, setHeartSent] = useState(false);
+  const [incomingHearts, setIncomingHearts] = useState<FloatingHeart[]>([]);
+  const [showIncomingToast, setShowIncomingToast] = useState(false);
+  const heartIdRef = useRef(0);
 
   const { data: rel } = useQuery({
     queryKey: ["relationship"],
@@ -28,6 +38,29 @@ const DashboardPage: React.FC = () => {
     queryKey: ["calendar"],
     queryFn: calendarApi.list,
   });
+
+  // Socket: listen for incoming heartbeats
+  useEffect(() => {
+    const socket = connectSocket();
+    const handleHeart = () => {
+      const id = ++heartIdRef.current;
+      const x = 30 + Math.random() * 40; // % from left
+      setIncomingHearts((prev) => [...prev, { id, x }]);
+      setShowIncomingToast(true);
+      setTimeout(() => setShowIncomingToast(false), 3500);
+      setTimeout(() => setIncomingHearts((prev) => prev.filter((h) => h.id !== id)), 2500);
+    };
+    socket.on("heart:received", handleHeart);
+    return () => { socket.off("heart:received", handleHeart); };
+  }, []);
+
+  const sendHeart = useCallback(() => {
+    if (heartSent) return;
+    const socket = getSocket();
+    socket.emit("heart:send");
+    setHeartSent(true);
+    setTimeout(() => setHeartSent(false), 3000);
+  }, [heartSent]);
 
   const startDate = rel ? new Date(rel.startDate) : null;
   const today = new Date();
@@ -125,6 +158,72 @@ const DashboardPage: React.FC = () => {
             Since {format(startDate, "MMMM d, yyyy")} 🌸
           </p>
         )}
+      </motion.div>
+
+      {/* Heartbeat Button */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6 relative"
+      >
+        {/* Floating incoming hearts */}
+        <AnimatePresence>
+          {incomingHearts.map((h) => (
+            <motion.div
+              key={h.id}
+              className="absolute pointer-events-none text-4xl"
+              style={{ left: `${h.x}%`, bottom: "100%" }}
+              initial={{ opacity: 1, y: 0, scale: 0.8 }}
+              animate={{ opacity: 0, y: -120, scale: 1.4 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 2.2, ease: "easeOut" }}
+            >
+              💓
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.92 }}
+          onClick={sendHeart}
+          disabled={heartSent}
+          className={`w-full rounded-3xl p-6 flex flex-col items-center gap-2 shadow-lg border transition-all ${
+            heartSent
+              ? "bg-pink-50 border-pink-200"
+              : "bg-white border-gray-100 hover:border-pink-200 hover:bg-pink-50"
+          }`}
+        >
+          <motion.span
+            className="text-5xl"
+            animate={heartSent ? { scale: [1, 1.4, 1], rotate: [0, -10, 10, 0] } : {}}
+            transition={{ duration: 0.5 }}
+          >
+            {heartSent ? "💓" : "🤍"}
+          </motion.span>
+          <span className="font-black text-gray-700 text-base">
+            {heartSent ? "Sent! 💌" : `Send a heartbeat to ${user?.role === "BOY" ? "BriBri 💛" : "Ron Ron 💙"}`}
+          </span>
+          <span className="text-xs text-gray-400 font-medium">Tap to let them know you're thinking of them</span>
+        </motion.button>
+
+        {/* Incoming toast */}
+        <AnimatePresence>
+          {showIncomingToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-2 border border-pink-100 whitespace-nowrap z-10"
+            >
+              <span className="text-xl">💓</span>
+              <span className="font-bold text-gray-700 text-sm">
+                {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is thinking of you!
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Upcoming Dates */}
