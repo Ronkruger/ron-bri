@@ -106,6 +106,22 @@ const AppLayout: React.FC = () => {
             <span className="text-xs font-semibold">{item.label}</span>
           </NavLink>
         ))}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-gray-400 hover:text-red-500 transition-all"
+        >
+          <span className="text-2xl">👋</span>
+          <span className="text-xs font-semibold">Logout</span>
+        </button>
+      </nav>
+                isActive ? "text-[var(--color-accent)]" : "text-gray-400"
+              }`
+            }
+          >
+            <span className="text-2xl">{item.emoji}</span>
+            <span className="text-xs font-semibold">{item.label}</span>
+          </NavLink>
+        ))}
       </nav>
 
       {/* AI FAB */}

@@ -26,10 +26,12 @@ const issueRefreshToken = (userId: string) => {
   return jwt.sign({ userId }, secret, { expiresIn: "30d" });
 };
 
+const isProd = process.env.NODE_ENV === "production";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
   path: "/",
 };
 

@@ -37,7 +37,8 @@ app.use(
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.includes(origin) ||
-        origin.endsWith(".railway.app")
+        origin.endsWith(".railway.app") ||
+        origin.endsWith(".netlify.app")
       ) {
         return callback(null, true);
       }
