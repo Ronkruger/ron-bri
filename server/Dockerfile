@@ -31,7 +31,7 @@ COPY server ./server
 RUN npm ci --omit=dev --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
 
 # Regenerate Prisma client for the production platform
-RUN npx --prefix server prisma generate
+RUN cd server && npx prisma generate
 
 # Copy compiled output from builder
 COPY --from=builder /app/server/dist ./server/dist
