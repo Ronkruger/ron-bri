@@ -52,10 +52,20 @@ Current user: ${user?.displayName ?? "unknown"}`,
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
+        let isErrorEvent = false;
         for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            isErrorEvent = line.slice(7).trim() === "error";
+            continue;
+          }
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
             if (data === "[DONE]") continue;
+            if (isErrorEvent) {
+              let errMsg = "AI service error";
+              try { errMsg = JSON.parse(data)?.message ?? errMsg; } catch { errMsg = data; }
+              throw new Error(errMsg);
+            }
             try {
               const parsed = JSON.parse(data);
               const delta = parsed?.choices?.[0]?.delta?.content ?? "";
@@ -68,16 +78,18 @@ Current user: ${user?.displayName ?? "unknown"}`,
                 });
                 setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 10);
               }
-            } catch {
-              // ignore parse errors
+            } catch (parseErr) {
+              if (parseErr instanceof Error && parseErr.message !== "[object Object]") throw parseErr;
             }
+            isErrorEvent = false;
           }
         }
       }
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: "Oops, something went wrong! 😅 Try again?" };
+        updated[updated.length - 1] = { role: "assistant", content: `⚠️ ${msg}` };
         return updated;
       });
     } finally {

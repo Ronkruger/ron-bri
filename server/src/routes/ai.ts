@@ -53,7 +53,9 @@ router.post("/chat", async (req: AuthRequest, res: Response): Promise<void> => {
     });
 
     if (!response.ok || !response.body) {
-      res.write("event: error\ndata: AI service unavailable\n\n");
+      const errText = await response.text().catch(() => "(no body)");
+      console.error(`OpenRouter error ${response.status}:`, errText);
+      res.write(`event: error\ndata: ${JSON.stringify({ status: response.status, message: errText })}\n\n`);
       res.end();
       return;
     }
