@@ -14,6 +14,21 @@ const aiLimiter = rateLimit({
 
 router.use(aiLimiter);
 
+// GET /api/ai/key-check  → diagnose key format (no sensitive data exposed)
+router.get("/key-check", (req: AuthRequest, res: Response) => {
+  const raw = process.env.OPENROUTER_API_KEY ?? "";
+  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
+  res.json({
+    isSet: raw.length > 0,
+    rawLength: raw.length,
+    trimmedLength: trimmed.length,
+    prefix: trimmed.slice(0, 12),
+    startsWithBearer: trimmed.toLowerCase().startsWith("bearer"),
+    hasNewline: raw.includes("\n") || raw.includes("\r"),
+    hasNullByte: raw.includes("\0"),
+  });
+});
+
 // POST /api/ai/chat  → SSE streaming response
 router.post("/chat", async (req: AuthRequest, res: Response): Promise<void> => {
   try {
