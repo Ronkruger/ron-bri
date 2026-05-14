@@ -3,19 +3,9 @@ import { requireAuth, AuthRequest } from "../middleware/requireAuth";
 import { rateLimit } from "express-rate-limit";
 
 const router = Router();
-router.use(requireAuth);
 
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 20,
-  keyGenerator: (req: AuthRequest) => req.userId ?? req.ip ?? "unknown",
-  message: { error: "Too Many Requests", message: "Slow down, you're using the AI too fast!" },
-});
-
-router.use(aiLimiter);
-
-// GET /api/ai/key-check  → diagnose key format (no sensitive data exposed)
-router.get("/key-check", (req: AuthRequest, res: Response) => {
+// GET /api/ai/key-check  → public diagnostic (no sensitive data exposed)
+router.get("/key-check", (_req, res: Response) => {
   const raw = process.env.OPENROUTER_API_KEY ?? "";
   const trimmed = raw.trim().replace(/^["']|["']$/g, "");
   res.json({
@@ -28,6 +18,17 @@ router.get("/key-check", (req: AuthRequest, res: Response) => {
     hasNullByte: raw.includes("\0"),
   });
 });
+
+router.use(requireAuth);
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  keyGenerator: (req: AuthRequest) => req.userId ?? req.ip ?? "unknown",
+  message: { error: "Too Many Requests", message: "Slow down, you're using the AI too fast!" },
+});
+
+router.use(aiLimiter);
 
 // POST /api/ai/chat  → SSE streaming response
 router.post("/chat", async (req: AuthRequest, res: Response): Promise<void> => {
