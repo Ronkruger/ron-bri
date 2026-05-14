@@ -26,12 +26,12 @@ router.post("/chat", async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+    const apiKey = process.env.OPENROUTER_API_KEY?.trim().replace(/^["']|["']$/g, "");
     if (!apiKey) {
       res.status(503).json({ error: "AI service not configured" });
       return;
     }
-    console.log("[ai] key prefix:", apiKey.slice(0, 10), "length:", apiKey.length);
+    console.log("[ai] key prefix:", apiKey.slice(0, 12), "length:", apiKey.length);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
