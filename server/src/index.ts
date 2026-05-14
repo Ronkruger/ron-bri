@@ -82,7 +82,19 @@ app.use((_req, res) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT) || 3001;
-httpServer.listen(PORT, () => {
+
+// Log critical env var presence at startup (not values)
+console.log("[startup] DATABASE_URL set:", !!process.env.DATABASE_URL);
+console.log("[startup] JWT_SECRET set:", !!process.env.JWT_SECRET);
+console.log("[startup] CLIENT_URL:", process.env.CLIENT_URL ?? "(not set)");
+console.log("[startup] Binding to port:", PORT);
+
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV ?? "development"}`);
+});
+
+httpServer.on("error", (err) => {
+  console.error("[fatal] Failed to start HTTP server:", err);
+  process.exit(1);
 });
