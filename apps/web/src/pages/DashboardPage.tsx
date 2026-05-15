@@ -15,6 +15,7 @@ import { relationshipApi, calendarApi } from "@ronbri/api-client";
 import { getSocket, connectSocket } from "@ronbri/api-client";
 import { useAuth } from "../contexts/AuthContext";
 import type { DateEvent } from "@ronbri/types";
+import { fireNotification, requestNotificationPermission } from "../lib/notify";
 
 interface FloatingHeart {
   id: number;
@@ -41,18 +42,21 @@ const DashboardPage: React.FC = () => {
 
   // Socket: listen for incoming heartbeats
   useEffect(() => {
+    requestNotificationPermission();
     const socket = connectSocket();
     const handleHeart = () => {
       const id = ++heartIdRef.current;
-      const x = 30 + Math.random() * 40; // % from left
+      const x = 30 + Math.random() * 40;
       setIncomingHearts((prev) => [...prev, { id, x }]);
       setShowIncomingToast(true);
       setTimeout(() => setShowIncomingToast(false), 3500);
       setTimeout(() => setIncomingHearts((prev) => prev.filter((h) => h.id !== id)), 2500);
+      const senderName = user?.role === "BOY" ? "BriBri" : "Ron Ron";
+      fireNotification(`${senderName} sent you a 💗`, "You received a heartbeat!");
     };
     socket.on("heart:received", handleHeart);
     return () => { socket.off("heart:received", handleHeart); };
-  }, []);
+  }, [user]);
 
   const sendHeart = useCallback(() => {
     if (heartSent) return;

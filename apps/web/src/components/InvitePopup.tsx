@@ -7,6 +7,7 @@ import type { DateInvite } from "@ronbri/types";
 import { InviteStatus } from "@ronbri/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
+import { fireNotification } from "../lib/notify";
 
 // Inline minimal envelope Lottie JSON (open envelope animation)
 // In production, replace with a proper Lottie JSON from lottiefiles.com
@@ -85,6 +86,7 @@ const InvitePopup: React.FC = () => {
     const socket = getSocket();
     const onInviteNew = ({ invite }: { invite: DateInvite }) => {
       setQueue((prev) => [...prev, invite]);
+      fireNotification(`${invite.sender?.displayName ?? "Someone"} sent you an invite 💌`, invite.title);
     };
     socket.on("invite:new", onInviteNew);
     return () => { socket.off("invite:new", onInviteNew); };

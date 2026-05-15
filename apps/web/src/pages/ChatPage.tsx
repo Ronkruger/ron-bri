@@ -7,18 +7,10 @@ import type { Message, MessageReaction } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
 import GifPicker from "../components/GifPicker";
 import EmojiPickerButton from "../components/EmojiPickerButton";
+import { fireNotification, requestNotificationPermission } from "../lib/notify";
 
 const DEFAULT_REACTIONS = ["❤️", "😆", "😮", "😢", "😡"];
 const REACTIONS_KEY = "ronbri_web_reactions";
-
-const notifSound = typeof window !== "undefined" ? new Audio("/notification.mp3") : null;
-
-function fireNotification(title: string, body: string) {
-  if (notifSound) { notifSound.currentTime = 0; notifSound.play().catch(() => {}); }
-  if (Notification.permission === "granted") {
-    new Notification(title, { body, icon: "/favicon.svg", tag: "ronbri-msg" });
-  }
-}
 
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -38,11 +30,7 @@ const ChatPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<{ file: File; dataUrl: string } | null>(null);
 
   // Request notification permission once
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
+  useEffect(() => { requestNotificationPermission(); }, []);
 
   const [reactionSet, setReactionSet] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem(REACTIONS_KEY) ?? "null") ?? DEFAULT_REACTIONS; }
