@@ -4,6 +4,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./index.css";
 
+// Register service worker for mobile push notifications (Android + iOS PWA)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").then((reg) => {
+    console.log("[SW] Registered, scope:", reg.scope);
+  }).catch((err) => {
+    console.error("[SW] Registration failed:", err);
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
