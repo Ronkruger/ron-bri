@@ -13,7 +13,7 @@ COPY packages/types ./packages/types
 COPY server ./server
 
 # Install all workspace deps from root
-RUN npm ci --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
+RUN npm ci --legacy-peer-deps --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
 
 # Build server (prisma generate + tsc)
 RUN npm run build --workspace=server
@@ -30,7 +30,7 @@ COPY packages/tsconfig ./packages/tsconfig
 COPY packages/types ./packages/types
 COPY server ./server
 
-RUN npm ci --omit=dev --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
+RUN npm ci --omit=dev --legacy-peer-deps --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
 
 # Regenerate Prisma client for the production platform
 RUN cd server && npx prisma generate
