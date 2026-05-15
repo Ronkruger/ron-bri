@@ -7,7 +7,7 @@
   --color-light: #EFF6FF;
   --color-accent: #2563EB;
   --color-muted: #BFDBFE;
-  --gradient-app: linear-gradient(135deg, #fdf2f8 0%, #faf5ff 50%, #eff6ff 100%);
+  --gradient-app: linear-gradient(135deg, #fce7f3 0%, #ede9fe 45%, #dbeafe 100%);
 }
 
 [data-theme="girl"] {
@@ -15,7 +15,7 @@
   --color-light: #FFFBEB;
   --color-accent: #D97706;
   --color-muted: #FDE68A;
-  --gradient-app: linear-gradient(135deg, #fdf2f8 0%, #fffbeb 50%, #fef9c3 100%);
+  --gradient-app: linear-gradient(135deg, #fce7f3 0%, #fef3c7 55%, #fef9c3 100%);
 }
 
 * {

@@ -39,8 +39,8 @@ const AppLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar — desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white/80 backdrop-blur-md border-r border-white/60 shadow-sm">
-        <div className="p-6 border-b border-white/60">
+      <aside className="hidden md:flex flex-col w-64 bg-white/60 backdrop-blur-md border-r border-white/40 shadow-sm">
+        <div className="p-6 border-b border-white/40">
           <div className="flex items-center gap-3">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-2xl object-cover border border-white/60 shadow-sm" />
@@ -86,7 +86,7 @@ const AppLayout: React.FC = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/60">
+        <div className="p-4 border-t border-white/40">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-500 font-semibold transition-all"
@@ -110,7 +110,7 @@ const AppLayout: React.FC = () => {
       </main>
 
       {/* Bottom tab bar — mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-white/60 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/60 backdrop-blur-lg border-t border-white/40 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

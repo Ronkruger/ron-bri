@@ -128,7 +128,7 @@ const DashboardPage: React.FC = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="rounded-4xl bg-white/70 backdrop-blur-sm shadow-md p-8 mb-6 border border-white/80"
+        className="rounded-4xl bg-white/50 backdrop-blur-sm shadow-md p-8 mb-6 border border-white/60"
       >
         <div className="text-center mb-6">
           <span className="text-2xl font-black text-gray-800">
@@ -195,8 +195,8 @@ const DashboardPage: React.FC = () => {
           disabled={heartSent}
           className={`w-full rounded-3xl p-6 flex flex-col items-center gap-2 shadow-lg border transition-all ${
             heartSent
-              ? "bg-pink-50/80 backdrop-blur-sm border-pink-200"
-              : "bg-white/70 backdrop-blur-sm border-white/80 hover:border-pink-200 hover:bg-pink-50/80"
+              ? "bg-pink-50/60 backdrop-blur-sm border-pink-200"
+              : "bg-white/50 backdrop-blur-sm border-white/60 hover:border-pink-200 hover:bg-pink-50/60"
           }`}
         >
           <motion.span
@@ -238,7 +238,7 @@ const DashboardPage: React.FC = () => {
       >
         <h2 className="text-xl font-black text-gray-700 mb-4">Upcoming Dates 📅</h2>
         {upcoming.length === 0 ? (
-          <div className="rounded-3xl bg-white/70 backdrop-blur-sm border border-dashed border-white/80 p-6 text-center text-gray-400 font-medium">
+          <div className="rounded-3xl bg-white/50 backdrop-blur-sm border border-dashed border-white/60 p-6 text-center text-gray-400 font-medium">
             No upcoming dates — go plan something! 🗓️
           </div>
         ) : (
@@ -247,7 +247,7 @@ const DashboardPage: React.FC = () => {
               <motion.div
                 key={event.id}
                 whileHover={{ scale: 1.02 }}
-                className={`rounded-3xl bg-white/70 backdrop-blur-sm shadow-sm p-5 border-l-4 ${
+                className={`rounded-3xl bg-white/50 backdrop-blur-sm shadow-sm p-5 border-l-4 ${
                   event.createdBy?.role === "BOY"
                     ? "border-blue-400"
                     : "border-yellow-400"
