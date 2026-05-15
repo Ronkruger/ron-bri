@@ -88,6 +88,28 @@ export interface Relationship {
   updatedAt: string;
 }
 
+export interface BucketItem {
+  id: string;
+  title: string;
+  description: string | null;
+  emoji: string | null;
+  category: string | null;
+  imageUrl: string | null;
+  completedAt: string | null;
+  completedImageUrl: string | null;
+  createdById: string;
+  createdBy: User;
+  createdAt: string;
+}
+
+export interface CreateBucketItemPayload {
+  title: string;
+  description?: string;
+  emoji?: string;
+  category?: string;
+  imageUrl?: string;
+}
+
 // ─── API Types ────────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

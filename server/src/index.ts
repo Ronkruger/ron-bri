@@ -13,6 +13,7 @@ import uploadRouter from "./routes/upload";
 import aiRouter from "./routes/ai";
 import giphyRouter from "./routes/giphy";
 import relationshipRouter from "./routes/relationship";
+import bucketListRouter from "./routes/bucketlist";
 
 import { initSocket } from "./socket";
 import { setIo } from "./services";
@@ -74,6 +75,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/giphy", giphyRouter);
 app.use("/api/relationship", relationshipRouter);
+app.use("/api/bucket-list", bucketListRouter);
 
 // 404 catch-all
 app.use((_req, res) => {

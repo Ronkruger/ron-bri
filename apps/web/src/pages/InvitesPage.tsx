@@ -16,6 +16,13 @@ const INVITE_TYPES = [
   { type: InviteType.CUSTOM, emoji: "✨", label: "Custom" },
 ];
 
+const INVITE_TYPE_BG: Record<string, string> = {
+  [InviteType.OUTSIDE]: "bg-emerald-50/80",
+  [InviteType.FOOD]: "bg-orange-50/80",
+  [InviteType.BONDING]: "bg-violet-50/80",
+  [InviteType.CUSTOM]: "bg-pink-50/80",
+};
+
 interface BadgeInfo { label: string; cls: string; extra?: string; }
 
 function getDisplayBadge(
@@ -130,7 +137,7 @@ const InvitesPage: React.FC = () => {
                 key={invite.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl shadow-sm p-5"
+                className={`${INVITE_TYPE_BG[invite.type] ?? "bg-white/70"} backdrop-blur-sm border border-white/80 rounded-3xl shadow-sm p-5`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">

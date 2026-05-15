@@ -81,7 +81,7 @@ const CalendarPage: React.FC = () => {
             + New Date
           </button>
         </div>
-        <div className="h-[calc(100%-4rem)] bg-white rounded-3xl shadow-sm p-4">
+        <div className="h-[calc(100%-4rem)] bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/80 p-4">
           <Calendar
             localizer={localizer}
             events={calendarEvents}
@@ -104,7 +104,7 @@ const CalendarPage: React.FC = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
-            className="w-80 bg-white shadow-xl border-l border-gray-100 p-6 flex flex-col gap-4 overflow-y-auto"
+            className="w-80 bg-white/80 backdrop-blur-md shadow-xl border-l border-white/60 p-6 flex flex-col gap-4 overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-gray-800">Event</h2>
@@ -233,7 +233,7 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-4xl w-full max-w-md p-8 shadow-2xl"
+          className="bg-white/90 backdrop-blur-sm rounded-4xl w-full max-w-md p-8 shadow-2xl border border-white/60"
         >
           <h2 className="text-2xl font-black text-gray-800 mb-6">
             {initial ? "Edit Date ✏️" : "New Date 📅"}

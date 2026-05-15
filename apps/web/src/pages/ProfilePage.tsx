@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 p-6 md:p-10">
+    <div className="min-h-screen p-6 md:p-10">
       <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur rounded-[2rem] shadow-xl border border-white/60 overflow-hidden">
         <div className="p-8 md:p-10 border-b border-gray-100">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -76,19 +76,19 @@ const ProfilePage: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 p-8 md:p-10">
-          <div className="rounded-3xl bg-gray-50 p-5">
+          <div className={`rounded-3xl ${user.role === "BOY" ? "bg-blue-50/60" : "bg-yellow-50/60"} p-5`}>
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Username</p>
             <p className="mt-2 text-lg font-bold text-gray-800">{user.username}</p>
           </div>
-          <div className="rounded-3xl bg-gray-50 p-5">
+          <div className={`rounded-3xl ${user.role === "BOY" ? "bg-blue-50/60" : "bg-yellow-50/60"} p-5`}>
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Role</p>
             <p className="mt-2 text-lg font-bold text-gray-800">{user.role === "BOY" ? "Ron Ron 💙" : "BriBri 💛"}</p>
           </div>
-          <div className="rounded-3xl bg-gray-50 p-5">
+          <div className={`rounded-3xl ${user.role === "BOY" ? "bg-blue-50/60" : "bg-yellow-50/60"} p-5`}>
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Theme</p>
             <p className="mt-2 text-lg font-bold text-gray-800 capitalize">{user.theme}</p>
           </div>
-          <div className="rounded-3xl bg-gray-50 p-5">
+          <div className={`rounded-3xl ${user.role === "BOY" ? "bg-blue-50/60" : "bg-yellow-50/60"} p-5`}>
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Joined</p>
             <p className="mt-2 text-lg font-bold text-gray-800">{new Date(user.createdAt).toLocaleDateString()}</p>
           </div>

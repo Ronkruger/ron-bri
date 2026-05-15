@@ -6,6 +6,8 @@ import type {
   DateInvite,
   Message,
   Relationship,
+  BucketItem,
+  CreateBucketItemPayload,
   CreateEventPayload,
   UpdateEventPayload,
   CreateInvitePayload,
@@ -100,6 +102,25 @@ export const relationshipApi = {
 
   update: (startDate: string) =>
     apiClient.patch<Relationship>("/relationship", { startDate }).then((r) => r.data),
+};
+
+// ─── Bucket List ──────────────────────────────────────────────────────────────
+
+export const bucketListApi = {
+  list: () =>
+    apiClient.get<BucketItem[]>("/bucket-list").then((r) => r.data),
+
+  create: (payload: CreateBucketItemPayload) =>
+    apiClient.post<BucketItem>("/bucket-list", payload).then((r) => r.data),
+
+  complete: (id: string, completedImageUrl?: string) =>
+    apiClient.patch<BucketItem>(`/bucket-list/${id}/complete`, { completedImageUrl }).then((r) => r.data),
+
+  uncomplete: (id: string) =>
+    apiClient.patch<BucketItem>(`/bucket-list/${id}/uncomplete`).then((r) => r.data),
+
+  delete: (id: string) =>
+    apiClient.delete(`/bucket-list/${id}`).then((r) => r.data),
 };
 
 // ─── AI ───────────────────────────────────────────────────────────────────────

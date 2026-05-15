@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { differenceInDays } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
+import { relationshipApi } from "@ronbri/api-client";
 import InvitePopup from "../components/InvitePopup";
 import AIDrawer from "../components/AIDrawer";
 
@@ -10,6 +13,7 @@ const navItems = [
   { to: "/chat", label: "Chat", emoji: "💬", end: false },
   { to: "/calendar", label: "Calendar", emoji: "📅", end: false },
   { to: "/invites", label: "Invites", emoji: "💌", end: false },
+  { to: "/bucket-list", label: "Bucket List", emoji: "🪣", end: false },
   { to: "/profile", label: "Profile", emoji: "👤", end: false },
 ];
 
@@ -18,19 +22,28 @@ const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
 
+  const { data: rel } = useQuery({
+    queryKey: ["relationship"],
+    queryFn: relationshipApi.get,
+  });
+
+  const daysTogether = rel
+    ? differenceInDays(new Date(), new Date(rel.startDate))
+    : null;
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen">
       {/* Sidebar — desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm">
-        <div className="p-6 border-b border-gray-100">
+      <aside className="hidden md:flex flex-col w-64 bg-white/80 backdrop-blur-md border-r border-white/60 shadow-sm">
+        <div className="p-6 border-b border-white/60">
           <div className="flex items-center gap-3">
             {user?.avatar ? (
-              <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-2xl object-cover border border-gray-100" />
+              <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-2xl object-cover border border-white/60 shadow-sm" />
             ) : (
               <div className="w-12 h-12 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black text-lg">
                 {user?.displayName?.charAt(0) ?? "R"}
@@ -38,12 +51,19 @@ const AppLayout: React.FC = () => {
             )}
             <div>
               <div className="text-2xl font-black text-gray-800">RonBri</div>
-              <div className="text-sm text-gray-400 mt-1">
+              <div className="text-sm text-gray-400 mt-0.5">
                 {user?.displayName}{" "}
                 <span className="inline-block w-2 h-2 rounded-full bg-green-400 ml-1" />
               </div>
             </div>
           </div>
+          {daysTogether !== null && (
+            <div className="mt-3 px-3 py-2 rounded-2xl bg-gradient-to-r from-pink-50 to-purple-50 border border-purple-100/60">
+              <p className="text-xs font-bold text-center text-purple-400">
+                💙 {daysTogether} days together 💛
+              </p>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-1">
@@ -55,8 +75,8 @@ const AppLayout: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all ${
                   isActive
-                    ? "bg-[var(--color-light)] text-[var(--color-accent)]"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-[var(--color-light)] text-[var(--color-accent)] shadow-sm font-bold"
+                    : "text-gray-600 hover:bg-white/60"
                 }`
               }
             >
@@ -66,7 +86,7 @@ const AppLayout: React.FC = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-white/60">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-500 font-semibold transition-all"
@@ -90,7 +110,7 @@ const AppLayout: React.FC = () => {
       </main>
 
       {/* Bottom tab bar — mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-white/60 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

@@ -10,6 +10,7 @@ import CalendarPage from "./pages/CalendarPage";
 import ChatPage from "./pages/ChatPage";
 import InvitesPage from "./pages/InvitesPage";
 import ProfilePage from "./pages/ProfilePage";
+import BucketListPage from "./pages/BucketListPage";
 
 const App: React.FC = () => (
   <BrowserRouter>
@@ -29,6 +30,7 @@ const App: React.FC = () => (
             <Route path="chat" element={<ChatPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="invites" element={<InvitesPage />} />
+            <Route path="bucket-list" element={<BucketListPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -208,9 +208,9 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen bg-gray-50">
+    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen">
       {/* Header */}
-      <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center gap-3">
+      <div className="px-6 py-4 bg-white/80 backdrop-blur-md border-b border-white/60 flex items-center gap-3">
         <div className="text-2xl">💬</div>
         <div>
           <div className="font-black text-gray-800">Our Chat</div>
@@ -297,7 +297,7 @@ const ChatPage: React.FC = () => {
       </AnimatePresence>
 
       {/* Input */}
-      <div className="px-4 py-3 bg-white border-t border-gray-100 pb-safe">
+      <div className="px-4 py-3 bg-white/80 backdrop-blur-md border-t border-white/60 pb-safe">
         <div className="flex items-end gap-2">
           {/* Emoji */}
           <EmojiPickerButton onPick={(em) => setContent((c) => c + em)} />

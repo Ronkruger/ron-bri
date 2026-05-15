@@ -65,11 +65,11 @@ const LoginPage: React.FC = () => {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-3xl shadow-2xl px-10 py-12 w-full max-w-sm mx-4 flex flex-col items-center gap-5"
+        className="bg-white/20 backdrop-blur-2xl border border-white/40 shadow-2xl rounded-3xl px-10 py-12 w-full max-w-sm mx-4 flex flex-col items-center gap-5"
       >
         <div className="text-3xl">✦</div>
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Babi Time</h1>
-        <p className="text-gray-500 text-center text-sm font-medium -mt-2">
+        <h1 className="text-3xl font-black text-white tracking-tight">Babi Time</h1>
+        <p className="text-white/70 text-center text-sm font-medium -mt-2">
           Choose your side to enter your shared love space.
         </p>
 
@@ -120,10 +120,10 @@ const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password 🔒"
-                className={`w-full rounded-2xl px-5 py-4 text-center text-base font-bold border-2 outline-none transition-all ${
+                className={`w-full rounded-2xl px-5 py-4 text-center text-base font-bold border-2 outline-none transition-all bg-white/80 ${
                   selected === "boy"
-                    ? "border-blue-300 focus:border-blue-500 bg-blue-50"
-                    : "border-yellow-300 focus:border-yellow-500 bg-yellow-50"
+                    ? "border-blue-300 focus:border-blue-500"
+                    : "border-yellow-300 focus:border-yellow-500"
                 }`}
               />
               {error && (
@@ -149,7 +149,7 @@ const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                className="text-gray-400 text-sm hover:text-gray-600 transition-colors"
+                className="text-white/60 text-sm hover:text-white transition-colors"
               >
                 ← Go back
               </button>

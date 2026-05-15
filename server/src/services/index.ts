@@ -197,3 +197,45 @@ export const relationshipService = {
       data: { startDate: new Date(startDate) },
     }),
 };
+
+// ─── Bucket List Service ──────────────────────────────────────────────────────
+
+export const bucketListService = {
+  findAll: () =>
+    prisma.bucketItem.findMany({
+      include: { createdBy: true },
+      orderBy: { createdAt: "desc" },
+    }),
+
+  findById: (id: string) =>
+    prisma.bucketItem.findUnique({ where: { id }, include: { createdBy: true } }),
+
+  create: (userId: string, data: {
+    title: string;
+    description?: string;
+    emoji?: string;
+    category?: string;
+    imageUrl?: string;
+  }) =>
+    prisma.bucketItem.create({
+      data: { ...data, createdById: userId },
+      include: { createdBy: true },
+    }),
+
+  complete: (id: string, completedImageUrl?: string) =>
+    prisma.bucketItem.update({
+      where: { id },
+      data: { completedAt: new Date(), completedImageUrl: completedImageUrl ?? null },
+      include: { createdBy: true },
+    }),
+
+  uncomplete: (id: string) =>
+    prisma.bucketItem.update({
+      where: { id },
+      data: { completedAt: null, completedImageUrl: null },
+      include: { createdBy: true },
+    }),
+
+  delete: (id: string) =>
+    prisma.bucketItem.delete({ where: { id } }),
+};
