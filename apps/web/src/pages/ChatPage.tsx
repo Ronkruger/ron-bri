@@ -11,6 +11,15 @@ import EmojiPickerButton from "../components/EmojiPickerButton";
 const DEFAULT_REACTIONS = ["❤️", "😆", "😮", "😢", "😡"];
 const REACTIONS_KEY = "ronbri_web_reactions";
 
+const notifSound = typeof window !== "undefined" ? new Audio("/notification.mp3") : null;
+
+function fireNotification(title: string, body: string) {
+  if (notifSound) { notifSound.currentTime = 0; notifSound.play().catch(() => {}); }
+  if (Notification.permission === "granted") {
+    new Notification(title, { body, icon: "/favicon.svg", tag: "ronbri-msg" });
+  }
+}
+
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -25,6 +34,15 @@ const ChatPage: React.FC = () => {
   const typingTimer = useRef<ReturnType<typeof setTimeout>>();
   const loadingOlderRef = useRef(false);
   const topRef = useRef<HTMLDivElement>(null);
+
+  const [imagePreview, setImagePreview] = useState<{ file: File; dataUrl: string } | null>(null);
+
+  // Request notification permission once
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const [reactionSet, setReactionSet] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem(REACTIONS_KEY) ?? "null") ?? DEFAULT_REACTIONS; }
@@ -54,9 +72,11 @@ const ChatPage: React.FC = () => {
         if (prev.find((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
-      // Mark as read if we're the receiver
       if (message.senderId !== user?.id) {
         socket.emit("message:read", { messageId: message.id });
+        const senderName = message.sender?.displayName ?? "Someone";
+        const body = message.content ?? (message.imageUrl ? "📷 Photo" : message.gifUrl ? "🎞️ GIF" : "New message");
+        fireNotification(`${senderName} 💬`, body);
       }
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     };
@@ -121,13 +141,22 @@ const ChatPage: React.FC = () => {
     setContent("");
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview({ file, dataUrl: reader.result as string });
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageSend = async () => {
+    if (!imagePreview) return;
     setUploading(true);
     try {
-      const { url } = await uploadApi.image(file);
+      const { url } = await uploadApi.image(imagePreview.file);
       sendMessage({ imageUrl: url });
+      setImagePreview(null);
     } finally {
       setUploading(false);
     }
@@ -235,6 +264,50 @@ const ChatPage: React.FC = () => {
         <div ref={bottomRef} />
       </div>
 
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {imagePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 flex items-end md:items-center justify-center p-4"
+            onClick={() => !uploading && setImagePreview(null)}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              className="bg-white rounded-3xl p-4 w-full max-w-sm shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-sm font-bold text-gray-500 mb-3 text-center">Send this photo?</p>
+              <img
+                src={imagePreview.dataUrl}
+                alt="Preview"
+                className="w-full rounded-2xl max-h-72 object-cover"
+              />
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setImagePreview(null)}
+                  disabled={uploading}
+                  className="flex-1 py-3 rounded-2xl bg-gray-100 font-bold text-gray-500 hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImageSend}
+                  disabled={uploading}
+                  className="flex-1 py-3 rounded-2xl bg-[var(--color-primary)] font-bold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+                >
+                  {uploading ? "Sending…" : "Send 📤"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input */}
       <div className="px-4 py-3 bg-white border-t border-gray-100 pb-safe">
         <div className="flex items-end gap-2">
@@ -258,7 +331,7 @@ const ChatPage: React.FC = () => {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={handleImageUpload}
+              onChange={handleImageSelect}
             />
           </label>
           {/* Image */}
@@ -268,7 +341,7 @@ const ChatPage: React.FC = () => {
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors"
           >
             🖼️
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
           </label>
           {/* Text */}
           <div className="flex-1">
