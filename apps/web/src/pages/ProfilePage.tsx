@@ -1,12 +1,19 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authApi, uploadApi } from "@ronbri/api-client";
 import { useAuth } from "../contexts/AuthContext";
 
 const ProfilePage: React.FC = () => {
-  const { user, setCurrentUser } = useAuth();
+  const { user, setCurrentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -92,6 +99,16 @@ const ProfilePage: React.FC = () => {
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Joined</p>
             <p className="mt-2 text-lg font-bold text-gray-800">{new Date(user.createdAt).toLocaleDateString()}</p>
           </div>
+        </div>
+
+        {/* Logout — visible on mobile only */}
+        <div className="p-8 md:p-10 pt-0 md:hidden">
+          <button
+            onClick={handleLogout}
+            className="w-full py-4 rounded-3xl bg-red-50 text-red-500 font-black text-base hover:bg-red-100 transition-colors border border-red-100"
+          >
+            👋 Log Out
+          </button>
         </div>
       </div>
     </div>
