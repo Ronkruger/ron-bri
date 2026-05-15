@@ -23,7 +23,7 @@ const ChatPage: React.FC = () => {
   const [gifOpen, setGifOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const typingTimer = useRef<ReturnType<typeof setTimeout>>();
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const loadingOlderRef = useRef(false);
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -377,7 +377,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customizingIdx, setCustomizingIdx] = useState<number | null>(null);
   const [customInput, setCustomInput] = useState("");
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Group reactions
