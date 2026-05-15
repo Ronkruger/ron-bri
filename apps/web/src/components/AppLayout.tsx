@@ -118,7 +118,7 @@ const AppLayout: React.FC = () => {
       {/* AI FAB */}
       <button
         onClick={() => setAiOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[var(--color-primary)] text-white text-2xl shadow-lg hover:scale-110 active:scale-95 transition-transform flex items-center justify-center"
+        className="fixed bottom-20 md:bottom-6 left-4 md:left-auto md:right-6 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[var(--color-primary)] text-white text-xl md:text-2xl shadow-lg hover:scale-110 active:scale-95 transition-transform flex items-center justify-center"
         aria-label="Open AI assistant"
       >
         🤖
