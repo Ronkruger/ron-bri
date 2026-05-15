@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
+    <div className="min-h-screen p-6 md:p-10 pb-28 md:pb-10">
       <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur rounded-[2rem] shadow-xl border border-white/60 overflow-hidden">
         <div className="p-8 md:p-10 border-b border-gray-100">
           <div className="flex flex-col md:flex-row md:items-center gap-6">

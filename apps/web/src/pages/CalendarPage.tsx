@@ -69,7 +69,7 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] md:h-screen">
+    <div className="flex h-[calc(100vh-4rem)] md:h-screen pb-16 md:pb-0">
       {/* Calendar */}
       <div className="flex-1 p-6 overflow-hidden">
         <div className="flex items-center justify-between mb-4">

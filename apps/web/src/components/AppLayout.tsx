@@ -13,7 +13,7 @@ const navItems = [
   { to: "/chat", label: "Chat", emoji: "💬", end: false },
   { to: "/calendar", label: "Calendar", emoji: "📅", end: false },
   { to: "/invites", label: "Invites", emoji: "💌", end: false },
-  { to: "/bucket-list", label: "Bucket List", emoji: "🪣", end: false },
+  { to: "/bucket-list", label: "Buckets", emoji: "🪣", end: false },
   { to: "/profile", label: "Profile", emoji: "👤", end: false },
 ];
 
@@ -110,29 +110,22 @@ const AppLayout: React.FC = () => {
       </main>
 
       {/* Bottom tab bar — mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/60 backdrop-blur-lg border-t border-white/40 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/60 backdrop-blur-lg border-t border-white/40 flex items-center justify-around px-1 py-2 z-40 safe-area-bottom">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
+              `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all ${
                 isActive ? "text-[var(--color-accent)]" : "text-gray-400"
               }`
             }
           >
-            <span className="text-2xl">{item.emoji}</span>
-            <span className="text-xs font-semibold">{item.label}</span>
+            <span className="text-xl">{item.emoji}</span>
+            <span className="text-[10px] font-semibold leading-tight">{item.label}</span>
           </NavLink>
         ))}
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-gray-400 hover:text-red-500 transition-all"
-        >
-          <span className="text-2xl">👋</span>
-          <span className="text-xs font-semibold">Logout</span>
-        </button>
       </nav>
 
       {/* AI FAB */}
