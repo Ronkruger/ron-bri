@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
-import { messagesApi, uploadApi, giphyApi } from "@ronbri/api-client";
+import { messagesApi, uploadApi } from "@ronbri/api-client";
 import { getSocket } from "@ronbri/api-client";
-import type { Message, PaginatedMessages } from "@ronbri/types";
+import type { Message, MessageReaction } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
 import GifPicker from "../components/GifPicker";
 import EmojiPickerButton from "../components/EmojiPickerButton";
+
+const DEFAULT_REACTIONS = ["❤️", "😆", "😮", "😢", "😡"];
+const REACTIONS_KEY = "ronbri_web_reactions";
 
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -23,6 +25,16 @@ const ChatPage: React.FC = () => {
   const typingTimer = useRef<ReturnType<typeof setTimeout>>();
   const loadingOlderRef = useRef(false);
   const topRef = useRef<HTMLDivElement>(null);
+
+  const [reactionSet, setReactionSet] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(REACTIONS_KEY) ?? "null") ?? DEFAULT_REACTIONS; }
+    catch { return DEFAULT_REACTIONS; }
+  });
+
+  const saveReactionSet = (rs: string[]) => {
+    setReactionSet(rs);
+    localStorage.setItem(REACTIONS_KEY, JSON.stringify(rs));
+  };
 
   // Initial load
   useEffect(() => {
@@ -59,14 +71,20 @@ const ChatPage: React.FC = () => {
       );
     };
 
+    const onReactions = ({ messageId, reactions }: { messageId: string; reactions: MessageReaction[] }) => {
+      setMessages((prev) => prev.map((m) => m.id === messageId ? { ...m, reactions } : m));
+    };
+
     socket.on("message:new", onNewMessage);
     socket.on("message:typing", onTyping);
     socket.on("message:read", onRead);
+    socket.on("message:reactions", onReactions);
 
     return () => {
       socket.off("message:new", onNewMessage);
       socket.off("message:typing", onTyping);
       socket.off("message:read", onRead);
+      socket.off("message:reactions", onReactions);
     };
   }, [user]);
 
@@ -130,6 +148,10 @@ const ChatPage: React.FC = () => {
     loadingOlderRef.current = false;
   }, [hasMore, cursor]);
 
+  const handleReact = (messageId: string, emoji: string) => {
+    getSocket().emit("message:react", { messageId, emoji });
+  };
+
   // Date separator labels
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return "Today";
@@ -153,7 +175,17 @@ const ChatPage: React.FC = () => {
         );
         lastDate = d;
       }
-      items.push(<MessageBubble key={msg.id} message={msg} isOwn={msg.senderId === user?.id} />);
+      items.push(
+        <MessageBubble
+          key={msg.id}
+          message={msg}
+          isOwn={msg.senderId === user?.id}
+          userId={user?.id ?? ""}
+          onReact={handleReact}
+          reactionSet={reactionSet}
+          onUpdateReactionSet={saveReactionSet}
+        />
+      );
     });
     return items;
   };
@@ -267,10 +299,66 @@ const ChatPage: React.FC = () => {
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 
-const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message, isOwn }) => {
-  const [hovered, setHovered] = useState(false);
+interface MessageBubbleProps {
+  message: Message;
+  isOwn: boolean;
+  userId: string;
+  onReact: (messageId: string, emoji: string) => void;
+  reactionSet: string[];
+  onUpdateReactionSet: (rs: string[]) => void;
+}
+
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message, isOwn, userId, onReact, reactionSet, onUpdateReactionSet,
+}) => {
   const d = new Date(message.createdAt);
   const avatarFallback = message.sender?.displayName?.charAt(0) ?? "R";
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [customizingIdx, setCustomizingIdx] = useState<number | null>(null);
+  const [customInput, setCustomInput] = useState("");
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Group reactions
+  const grouped = groupReactions(message.reactions ?? []);
+
+  const openPicker = () => { setPickerOpen(true); setCustomizingIdx(null); setCustomInput(""); };
+  const closePicker = () => { setPickerOpen(false); setCustomizingIdx(null); };
+
+  // Touch long-press (mobile web)
+  const onTouchStart = () => {
+    longPressTimer.current = setTimeout(openPicker, 350);
+  };
+  const onTouchEnd = () => clearTimeout(longPressTimer.current);
+
+  // Right-click (desktop)
+  const onContextMenu = (e: React.MouseEvent) => { e.preventDefault(); openPicker(); };
+
+  const handleReact = (emoji: string) => {
+    onReact(message.id, emoji);
+    closePicker();
+  };
+
+  const commitCustomize = () => {
+    if (customizingIdx === null || !customInput.trim()) { setCustomizingIdx(null); return; }
+    const newEmoji = [...customInput.trim()][0] ?? customInput.trim();
+    const updated = [...reactionSet];
+    updated[customizingIdx] = newEmoji;
+    onUpdateReactionSet(updated);
+    setCustomizingIdx(null);
+    setCustomInput("");
+  };
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) closePicker();
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("touchstart", handler); };
+  }, [pickerOpen]);
 
   return (
     <motion.div
@@ -280,62 +368,112 @@ const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message
     >
       {!isOwn &&
         (message.sender?.avatar ? (
-          <img
-            src={message.sender.avatar}
-            alt={message.sender.displayName}
-            className="w-9 h-9 rounded-2xl object-cover border border-gray-100 mr-2 self-end"
-          />
+          <img src={message.sender.avatar} alt={message.sender.displayName} className="w-9 h-9 rounded-2xl object-cover border border-gray-100 mr-2 self-end" />
         ) : (
           <div className="w-9 h-9 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black mr-2 self-end">
             {avatarFallback}
           </div>
         ))}
-      <div
-        className={`max-w-xs md:max-w-sm lg:max-w-md`}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+
+      <div ref={containerRef} className="relative max-w-xs md:max-w-sm lg:max-w-md">
+        {/* Bubble */}
         <div
-          className={`rounded-3xl px-4 py-3 shadow-sm ${
-            isOwn
-              ? "bg-[var(--color-primary)] text-white rounded-br-sm"
-              : "bg-white text-gray-800 rounded-bl-sm"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onTouchMove={onTouchEnd}
+          onContextMenu={onContextMenu}
+          className={`rounded-3xl px-4 py-3 shadow-sm select-none cursor-pointer active:scale-95 transition-transform ${
+            isOwn ? "bg-[var(--color-primary)] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm"
           }`}
         >
-          {message.content && (
-            <p className="font-medium leading-relaxed">{message.content}</p>
-          )}
-          {message.imageUrl && (
-            <img
-              src={message.imageUrl}
-              alt=""
-              className="rounded-2xl max-w-full mt-1"
-            />
-          )}
-          {message.gifUrl && (
-            <img src={message.gifUrl} alt="gif" className="rounded-2xl max-w-full mt-1" />
-          )}
+          {message.content && <p className="font-medium leading-relaxed break-words">{message.content}</p>}
+          {message.imageUrl && <img src={message.imageUrl} alt="" className="rounded-2xl max-w-full mt-1" />}
+          {message.gifUrl && <img src={message.gifUrl} alt="gif" className="rounded-2xl max-w-full mt-1" />}
         </div>
+
+        {/* Reaction pills */}
+        {grouped.length > 0 && (
+          <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+            {grouped.map(({ emoji, count, users }) => {
+              const isMine = users.includes(userId);
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => onReact(message.id, emoji)}
+                  className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white shadow text-sm border transition-colors ${
+                    isMine ? "border-[var(--color-primary)]" : "border-gray-100"
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  {count > 1 && <span className="text-xs font-bold text-gray-500">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Meta */}
         <div className={`flex items-center gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
-          <span className={`text-xs ${isOwn ? "text-gray-400" : "text-gray-300"}`}>
-            {hovered ? format(d, "h:mm a") : format(d, "h:mm a")}
-          </span>
+          <span className={`text-xs ${isOwn ? "text-gray-400" : "text-gray-300"}`}>{format(d, "h:mm a")}</span>
           {isOwn && (
-            <span
-              className={`text-xs font-bold ${message.readAt ? "text-[var(--color-primary)]" : "text-gray-300"}`}
-            >
-              {message.readAt ? "✓✓" : "✓✓"}
-            </span>
+            <span className={`text-xs font-bold ${message.readAt ? "text-[var(--color-primary)]" : "text-gray-300"}`}>✓✓</span>
           )}
         </div>
+
+        {/* Reaction Picker */}
+        <AnimatePresence>
+          {pickerOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.7, y: 8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              className={`absolute z-50 bottom-full mb-2 ${isOwn ? "right-0" : "left-0"} bg-white rounded-3xl shadow-xl border border-gray-100 p-2`}
+            >
+              {customizingIdx !== null ? (
+                <div className="flex flex-col gap-2 p-1 min-w-[180px]">
+                  <p className="text-xs font-bold text-gray-500 text-center">Replace "{reactionSet[customizingIdx]}"</p>
+                  <input
+                    autoFocus
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    placeholder="Paste emoji"
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-xl text-center outline-none focus:border-[var(--color-primary)]"
+                    maxLength={4}
+                  />
+                  <div className="flex gap-1">
+                    <button onClick={() => setCustomizingIdx(null)} className="flex-1 py-1.5 rounded-xl bg-gray-100 text-xs font-bold text-gray-500">Cancel</button>
+                    <button onClick={commitCustomize} className="flex-1 py-1.5 rounded-xl bg-[var(--color-primary)] text-xs font-bold text-white">Save</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-0.5">
+                  {reactionSet.map((emoji, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleReact(emoji)}
+                      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setCustomizingIdx(idx); setCustomInput(""); }}
+                      className="w-11 h-11 flex items-center justify-center rounded-full text-2xl hover:bg-gray-50 active:scale-125 transition-transform"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => { setCustomizingIdx(reactionSet.length - 1); setCustomInput(""); }}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 font-bold text-base hover:bg-gray-200 transition-colors"
+                  >
+                    ＋
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
       {isOwn &&
         (message.sender?.avatar ? (
-          <img
-            src={message.sender.avatar}
-            alt={message.sender.displayName}
-            className="w-9 h-9 rounded-2xl object-cover border border-gray-100 ml-2 self-end"
-          />
+          <img src={message.sender.avatar} alt={message.sender.displayName} className="w-9 h-9 rounded-2xl object-cover border border-gray-100 ml-2 self-end" />
         ) : (
           <div className="w-9 h-9 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black ml-2 self-end">
             {avatarFallback}
@@ -345,4 +483,15 @@ const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message
   );
 };
 
+function groupReactions(reactions: MessageReaction[]) {
+  const map = new Map<string, { count: number; users: string[] }>();
+  for (const r of reactions) {
+    const e = map.get(r.emoji);
+    if (e) { e.count++; e.users.push(r.userId); }
+    else map.set(r.emoji, { count: 1, users: [r.userId] });
+  }
+  return Array.from(map.entries()).map(([emoji, { count, users }]) => ({ emoji, count, users }));
+}
+
 export default ChatPage;
+
