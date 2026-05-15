@@ -6,10 +6,15 @@ export function playNotificationSound() {
   sound.play().catch(() => {});
 }
 
-export function fireNotification(title: string, body: string) {
+export async function fireNotification(title: string, body: string) {
   playNotificationSound();
-  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-    new Notification(title, { body, icon: "/favicon.svg", tag: "ronbri-notif" });
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  let permission = Notification.permission;
+  if (permission === "default") {
+    permission = await Notification.requestPermission();
+  }
+  if (permission === "granted") {
+    new Notification(title, { body, icon: "/favicon.svg" });
   }
 }
 
