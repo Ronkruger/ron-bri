@@ -59,14 +59,26 @@ model DateInvite {
 }
 
 model Message {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   content   String?
   imageUrl  String?
   gifUrl    String?
   senderId  String
-  sender    User     @relation(fields: [senderId], references: [id])
-  createdAt DateTime @default(now())
+  sender    User              @relation(fields: [senderId], references: [id])
+  createdAt DateTime          @default(now())
   readAt    DateTime?
+  reactions MessageReaction[]
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
 }
 
 model Relationship {

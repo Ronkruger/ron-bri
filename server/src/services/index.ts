@@ -141,7 +141,7 @@ export const messageService = {
     const messages = await prisma.message.findMany({
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: { sender: true },
+      include: { sender: true, reactions: true },
       orderBy: { createdAt: "desc" },
     });
     const hasMore = messages.length > limit;
@@ -157,15 +157,33 @@ export const messageService = {
   }) =>
     prisma.message.create({
       data: { senderId, ...data },
-      include: { sender: true },
+      include: { sender: true, reactions: true },
     }),
 
   markRead: (messageId: string) =>
     prisma.message.update({
       where: { id: messageId },
       data: { readAt: new Date() },
-      include: { sender: true },
+      include: { sender: true, reactions: true },
     }),
+
+  toggleReaction: async (userId: string, messageId: string, emoji: string) => {
+    const existing = await prisma.messageReaction.findUnique({
+      where: { messageId_userId: { messageId, userId } },
+    });
+    if (existing) {
+      if (existing.emoji === emoji) {
+        await prisma.messageReaction.delete({ where: { id: existing.id } });
+      } else {
+        await prisma.messageReaction.update({ where: { id: existing.id }, data: { emoji } });
+      }
+    } else {
+      await prisma.messageReaction.create({ data: { messageId, userId, emoji } });
+    }
+  },
+
+  getReactions: (messageId: string) =>
+    prisma.messageReaction.findMany({ where: { messageId } }),
 };
 
 // ─── Relationship Service ─────────────────────────────────────────────────────

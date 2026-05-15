@@ -53,6 +53,20 @@ export const initSocket = (httpServer: http.Server): Server => {
       }
     });
 
+    // ── message:react ─────────────────────────────────────────────────────────
+    socket.on("message:react", async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+      try {
+        await messageService.toggleReaction(userId, messageId, emoji);
+        const reactions = await messageService.getReactions(messageId);
+        const receiverId = userId === "user_boy" ? "user_girl" : "user_boy";
+        const payload = { messageId, reactions };
+        io.to(`user:${receiverId}`).emit("message:reactions", payload);
+        socket.emit("message:reactions", payload);
+      } catch (err) {
+        console.error("message:react error", err);
+      }
+    });
+
     // ── heart:send ────────────────────────────────────────────────────────────
     socket.on("heart:send", () => {
       const receiverId = userId === "user_boy" ? "user_girl" : "user_boy";

@@ -71,6 +71,15 @@ export interface Message {
   sender: User;
   createdAt: string;
   readAt: string | null;
+  reactions?: MessageReaction[];
+}
+
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+  createdAt: string;
 }
 
 export interface Relationship {
