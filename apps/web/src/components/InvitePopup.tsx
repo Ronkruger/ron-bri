@@ -86,7 +86,7 @@ const InvitePopup: React.FC = () => {
     const socket = getSocket();
     const onInviteNew = ({ invite }: { invite: DateInvite }) => {
       setQueue((prev) => [...prev, invite]);
-      fireNotification(`${invite.sender?.displayName ?? "Someone"} sent you an invite 💌`, invite.title);
+      fireNotification(`${invite.sender?.displayName ?? "Someone"} sent you an invite 💌`, invite.title, "ronbri-invite");
     };
     socket.on("invite:new", onInviteNew);
     return () => { socket.off("invite:new", onInviteNew); };

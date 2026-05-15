@@ -52,7 +52,7 @@ const DashboardPage: React.FC = () => {
       setTimeout(() => setShowIncomingToast(false), 3500);
       setTimeout(() => setIncomingHearts((prev) => prev.filter((h) => h.id !== id)), 2500);
       const senderName = user?.role === "BOY" ? "BriBri" : "Ron Ron";
-      fireNotification(`${senderName} sent you a 💗`, "You received a heartbeat!");
+      fireNotification(`${senderName} sent you a 💗`, "You received a heartbeat!", "ronbri-heart");
     };
     socket.on("heart:received", handleHeart);
     return () => { socket.off("heart:received", handleHeart); };

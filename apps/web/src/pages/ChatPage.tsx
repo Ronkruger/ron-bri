@@ -64,7 +64,7 @@ const ChatPage: React.FC = () => {
         socket.emit("message:read", { messageId: message.id });
         const senderName = message.sender?.displayName ?? "Someone";
         const body = message.content ?? (message.imageUrl ? "📷 Photo" : message.gifUrl ? "🎞️ GIF" : "New message");
-        fireNotification(`${senderName} 💬`, body);
+        fireNotification(`${senderName} 💬`, body, "ronbri-chat");
       }
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     };
