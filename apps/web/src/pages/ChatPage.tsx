@@ -443,9 +443,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           onTouchEnd={onTouchEnd}
           onTouchMove={onTouchEnd}
           onContextMenu={onContextMenu}
-          className={`rounded-3xl px-4 py-3 shadow-sm select-none cursor-pointer active:scale-95 transition-transform ${
-            isOwn ? "bg-[var(--color-primary)] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm"
-          }`}
+          className={`rounded-3xl shadow-sm select-none cursor-pointer active:scale-95 transition-transform ${
+            (message.imageUrl || message.gifUrl) && !message.content ? "p-1" : "px-4 py-3"
+          } ${isOwn ? "bg-[var(--color-primary)] text-white rounded-br-sm" : "bg-white text-gray-800 rounded-bl-sm"}`}
         >
           {message.content && <p className="font-medium leading-relaxed break-words">{message.content}</p>}
           {message.imageUrl && <img src={message.imageUrl} alt="" className="rounded-2xl max-w-full mt-1" />}
