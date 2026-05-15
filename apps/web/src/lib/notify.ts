@@ -42,12 +42,15 @@ export async function fireNotification(title: string, body: string) {
 
   // Prefer service worker showNotification (works on Android & iOS PWA)
   const reg = await getSwRegistration();
-  if (reg) {
-    console.log("[notify] Using SW showNotification");
+  const pageVisible = typeof document !== "undefined" && document.visibilityState === "visible";
+
+  if (reg && !pageVisible) {
+    // Background: SW notification (system sound — JS audio unavailable in SW)
+    console.log("[notify] Page hidden — using SW showNotification (system sound)");
     await reg.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg" });
   } else {
-    // Desktop fallback
-    console.log("[notify] Using new Notification() (no SW)");
+    // Foreground: custom MP3 already played above, just show notification without SW chime
+    console.log("[notify] Page visible — using new Notification() (custom MP3 only)");
     new Notification(title, { body, icon: "/favicon.svg" });
   }
 }
