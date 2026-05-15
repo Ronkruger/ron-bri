@@ -46,10 +46,10 @@ export async function fireNotification(title: string, body: string, tag = "ronbr
 
   if (reg && !pageVisible) {
     console.log("[notify] Page hidden — using SW showNotification");
-    await reg.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg", tag, renotify: true });
+    await reg.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg", tag });
   } else {
     console.log("[notify] Page visible — using new Notification()");
-    new Notification(title, { body, icon: "/favicon.svg", tag, renotify: true });
+    new Notification(title, { body, icon: "/favicon.svg", tag });
   }
 }
 

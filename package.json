@@ -16,6 +16,7 @@
     "db:studio": "npm run db:studio --workspace=server"
   },
   "devDependencies": {
+    "@types/react-dom": "^19.2.3",
     "turbo": "^2.0.0",
     "typescript": "^5.4.5"
   },

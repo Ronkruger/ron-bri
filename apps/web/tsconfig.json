@@ -3,7 +3,8 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "../../",
-    "types": ["node", "vite/client"],
+    "typeRoots": ["../../node_modules/@types"],
+    "types": ["node", "react", "react-dom"],
     "paths": {
       "@/*": ["./src/*"],
       "@ronbri/types": ["../../packages/types/src/index.ts"],
