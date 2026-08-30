@@ -24,6 +24,8 @@ model User {
   sentInvites      DateInvite[] @relation("SentInvites")
   receivedInvites  DateInvite[] @relation("ReceivedInvites")
   messages         Message[]
+
+  @@map("user")
 }
 
 model DateEvent {
@@ -36,6 +38,8 @@ model DateEvent {
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
+
+  @@map("dateevent")
 }
 
 model DateInvite {
@@ -55,6 +59,8 @@ model DateInvite {
   rescheduleDate DateTime?
   seenAt         DateTime?
   createdAt      DateTime     @default(now())
+
+  @@map("dateinvite")
 }
 
 model Message {
@@ -66,12 +72,16 @@ model Message {
   sender    User     @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
   readAt    DateTime?
+
+  @@map("message")
 }
 
 model Relationship {
   id        String   @id @default("singleton")
   startDate DateTime
   updatedAt DateTime @updatedAt
+
+  @@map("relationship")
 }
 
 enum Role {
