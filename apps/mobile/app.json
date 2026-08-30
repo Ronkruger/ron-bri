@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-photo.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -17,13 +17,14 @@
       "package": "com.ronbri.app",
       "versionCode": 2,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/icon-photo.png",
         "backgroundColor": "#FFF9F3"
       }
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "scheme": "ronbri",
     "extra": {

@@ -6,12 +6,17 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../components/toast";
+import { requestNotificationPermission } from "../components/notifications";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
 export default function RootLayout() {
+  React.useEffect(() => {
+    void requestNotificationPermission();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

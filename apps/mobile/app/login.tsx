@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -24,18 +25,24 @@ export default function LoginScreen() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<PublicAccount[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState(false);
   const [selected, setSelected] = useState<PublicAccount | null>(null);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const theme = useUiTheme(selected?.role);
 
-  useEffect(() => {
+  const loadAccounts = useCallback(() => {
     let active = true;
+    setAccountsLoading(true);
+    setAccountsError(false);
     authApi.accounts()
       .then((data) => {
         if (active) setAccounts(data);
       })
-      .catch((caughtError) => mobileNotification.fromError(caughtError, "Unable to load accounts. Please try again."))
+      .catch((caughtError) => {
+        if (active) setAccountsError(true);
+        mobileNotification.fromError(caughtError, "Unable to load accounts. Please try again.");
+      })
       .finally(() => {
         if (active) setAccountsLoading(false);
       });
@@ -43,6 +50,8 @@ export default function LoginScreen() {
       active = false;
     };
   }, []);
+
+  useEffect(() => loadAccounts(), [loadAccounts]);
 
   const handleLogin = async () => {
     if (!selected || !password) return;
@@ -59,7 +68,9 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={[page.container, { backgroundColor: theme.background }]}>
+    <ImageBackground source={require("../assets/login-background.jpg")} style={page.background} resizeMode="cover">
+      <View style={page.overlay} />
+      <SafeAreaView style={[page.container, { backgroundColor: "transparent" }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={page.content} keyboardShouldPersistTaps="handled">
           <View style={[page.brand, { backgroundColor: theme.accent.soft }]}>
@@ -70,6 +81,14 @@ export default function LoginScreen() {
 
           {accountsLoading ? (
             <ActivityIndicator size="large" color={theme.accent.primaryStrong} />
+          ) : accountsError ? (
+            <View style={[sharedStyles.surface, page.errorCard, { backgroundColor: theme.surfaceRaised }]}>
+              <Text style={[page.errorTitle, { color: theme.text }]}>Connection unavailable</Text>
+              <Text style={[page.errorText, { color: theme.textMuted }]}>The shared space could not load the accounts.</Text>
+              <TouchableOpacity onPress={loadAccounts} style={[page.retryButton, { backgroundColor: theme.accent.primaryStrong }]}>
+                <Text style={page.loginText}>Try again</Text>
+              </TouchableOpacity>
+            </View>
           ) : !selected ? (
             <View style={page.cards}>
               {accounts.map((account) => {
@@ -130,12 +149,15 @@ export default function LoginScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const page = StyleSheet.create({
   container: { flex: 1 },
+  background: { flex: 1 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255, 249, 243, .64)" },
   content: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 22 },
   brand: { width: 52, height: 52, borderRadius: 18, alignItems: "center", justifyContent: "center", marginBottom: 15 },
   title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.6, marginBottom: 5 },
@@ -152,6 +174,10 @@ const page = StyleSheet.create({
   loginButton: { minHeight: 52, borderRadius: 14, flexDirection: "row", gap: 9, alignItems: "center", justifyContent: "center" },
   loginText: { color: "#fff", fontSize: 16, fontWeight: "800" },
   disabled: { opacity: 0.5 },
+  errorCard: { width: "100%", padding: 18, alignItems: "center", gap: 10 },
+  errorTitle: { fontSize: 17, fontWeight: "800" },
+  errorText: { fontSize: 13, fontWeight: "600", textAlign: "center" },
+  retryButton: { minHeight: 46, minWidth: 130, borderRadius: 14, alignItems: "center", justifyContent: "center", paddingHorizontal: 18 },
   backButton: { flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", paddingVertical: 5 },
   backText: { fontSize: 13, fontWeight: "700" },
 });
