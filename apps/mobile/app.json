@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ronbri.app"
@@ -18,6 +20,14 @@
       "expo-router",
       "expo-secure-store"
     ],
-    "scheme": "ronbri"
+    "scheme": "ronbri",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e9bb9021-a600-4084-96c0-d37cccd98403"
+      }
+    }
   }
 }

@@ -18,7 +18,7 @@ const resolveBaseUrl = (): string => {
   const raw =
     (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
       ? process.env.EXPO_PUBLIC_API_URL
-      : (import.meta as any)?.env?.VITE_API_URL ?? browserOrigin ?? "https://api.ronbri.invalid")
+      : browserOrigin ?? "https://api.ronbri.invalid")
       .trim();
 
   let normalized = raw;
