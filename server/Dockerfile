@@ -1,4 +1,8 @@
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -17,7 +21,11 @@ RUN npm ci --workspace=web --workspace=server --workspace=packages/api-client --
 RUN npm run build --workspace=web && npm run build --workspace=server
 
 # ── Production image ──────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:20-bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
