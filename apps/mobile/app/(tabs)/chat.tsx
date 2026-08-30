@@ -16,9 +16,11 @@ import { messagesApi } from "@ronbri/api-client";
 import { getSocket } from "@ronbri/api-client";
 import type { Message } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
+import { Icon, useUiTheme } from "../../components/ui";
 
 export default function ChatScreen() {
   const { user } = useAuth();
+  const theme = useUiTheme(user?.role);
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [peerTyping, setPeerTyping] = useState(false);
@@ -85,8 +87,7 @@ export default function ChatScreen() {
     setTypingActive(false);
   };
 
-  const isGirl = user?.role === "GIRL";
-  const primaryColor = isGirl ? "#EAB308" : "#3B82F6";
+  const primaryColor = theme.accent.primary;
 
   const renderItem = ({ item, index }: { item: Message; index: number }) => {
     const isOwn = item.senderId === user?.id;
@@ -105,8 +106,8 @@ export default function ChatScreen() {
           </View>
         )}
         <View style={[styles.bubbleRow, isOwn ? styles.ownRow : styles.theirRow]}>
-          <View style={[styles.bubble, isOwn ? { ...styles.ownBubble, backgroundColor: primaryColor } : styles.theirBubble]}>
-            {item.content ? <Text style={[styles.bubbleText, isOwn && { color: "#fff" }]}>{item.content}</Text> : null}
+          <View style={[styles.bubble, isOwn ? { ...styles.ownBubble, backgroundColor: primaryColor } : { ...styles.theirBubble, backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}>
+            {item.content ? <Text style={[styles.bubbleText, { color: isOwn ? "#fff" : theme.text }]}>{item.content}</Text> : null}
             {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.bubbleImage} /> : null}
             {item.gifUrl ? <Image source={{ uri: item.gifUrl }} style={styles.bubbleImage} /> : null}
           </View>
@@ -122,12 +123,12 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>💬 Our Chat</Text>
+        <View style={styles.headerRow}><View style={[styles.headerIcon, { backgroundColor: theme.accent.soft }]}><Icon name="message-outline" size={19} color={theme.accent.primaryStrong} /></View><Text style={[styles.headerTitle, { color: theme.text }]}>Our Chat</Text></View>
         {peerTyping && (
           <Text style={[styles.typingText, { color: primaryColor }]}>
-            {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is typing... {user?.role === "BOY" ? "💛" : "💙"}
+            {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is typing…
           </Text>
         )}
       </View>
@@ -148,8 +149,9 @@ export default function ChatScreen() {
           <TextInput
             value={content}
             onChangeText={handleTyping}
-            placeholder="Type something cute... 💕"
-            style={styles.input}
+            placeholder="Write a message…"
+            placeholderTextColor={theme.textMuted}
+            style={[styles.input, { backgroundColor: theme.surfaceRaised, borderColor: theme.border, color: theme.text }]}
             returnKeyType="send"
             onSubmitEditing={sendMessage}
           />
@@ -158,7 +160,7 @@ export default function ChatScreen() {
             disabled={!content.trim()}
             style={[styles.sendBtn, { backgroundColor: primaryColor }, !content.trim() && styles.sendBtnDisabled]}
           >
-            <Text style={styles.sendBtnText}>➤</Text>
+            <Icon name="send-outline" size={19} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -167,9 +169,11 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  header: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  headerTitle: { fontSize: 18, fontWeight: "900", color: "#1f2937" },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: "rgba(255,253,249,.86)", borderBottomWidth: 1, borderBottomColor: "rgba(185,130,103,.18)" },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+  headerIcon: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 18, fontWeight: "900" },
   typingText: { fontSize: 12, fontWeight: "600", marginTop: 2 },
   list: { padding: 16, paddingBottom: 8 },
   dateSep: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
@@ -180,16 +184,16 @@ const styles = StyleSheet.create({
   theirRow: { alignItems: "flex-start" },
   bubble: { maxWidth: "75%", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10 },
   ownBubble: { borderBottomRightRadius: 4 },
-  theirBubble: { backgroundColor: "#fff", borderBottomLeftRadius: 4, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
-  bubbleText: { fontSize: 15, fontWeight: "500", color: "#1f2937", lineHeight: 21 },
+  theirBubble: { borderBottomLeftRadius: 4, shadowColor: "#9d654d", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, borderWidth: 1 },
+  bubbleText: { fontSize: 15, fontWeight: "500", lineHeight: 21 },
   bubbleImage: { width: 200, height: 150, borderRadius: 12, marginTop: 4 },
   meta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2, marginHorizontal: 4 },
   metaRight: { justifyContent: "flex-end" },
   metaLeft: { justifyContent: "flex-start" },
   metaTime: { fontSize: 11, color: "#9ca3af" },
   readTick: { fontSize: 11, fontWeight: "700" },
-  inputBar: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f3f4f6" },
-  input: { flex: 1, borderRadius: 20, borderWidth: 1.5, borderColor: "#e5e7eb", paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontWeight: "500", backgroundColor: "#fafafa" },
+  inputBar: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, backgroundColor: "rgba(255,253,249,.94)", borderTopWidth: 1, borderTopColor: "rgba(185,130,103,.18)" },
+  input: { flex: 1, borderRadius: 16, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontWeight: "500" },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   sendBtnDisabled: { opacity: 0.5 },
   sendBtnText: { color: "#fff", fontSize: 18, fontWeight: "900" },

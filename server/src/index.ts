@@ -1,9 +1,10 @@
-import "dotenv/config";
+import "./load-env";
 import http from "http";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
+import path from "path";
 
 import authRouter from "./routes/auth";
 import calendarRouter from "./routes/calendar";
@@ -75,7 +76,21 @@ app.use("/api/ai", aiRouter);
 app.use("/api/giphy", giphyRouter);
 app.use("/api/relationship", relationshipRouter);
 
-// 404 catch-all
+// The Render deployment packages the web build with the API, so browser routes,
+// refresh cookies, and Socket.IO all share one HTTPS origin.
+const webDistPath = path.resolve(__dirname, "../../apps/web/dist");
+app.use(express.static(webDistPath));
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+    next();
+    return;
+  }
+  res.sendFile(path.join(webDistPath, "index.html"), (error) => {
+    if (error) next(error);
+  });
+});
+
+// API and unknown-resource catch-all
 app.use((_req, res) => {
   res.status(404).json({ error: "Not Found" });
 });

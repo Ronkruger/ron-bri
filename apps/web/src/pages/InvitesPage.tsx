@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { CalendarDays, Camera, Check, Image as ImageIcon, Inbox, Mail, Plus, RotateCw, Send } from "lucide-react";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { invitesApi, uploadApi, giphyApi } from "@ronbri/api-client";
 import type { DateInvite, CreateInvitePayload } from "@ronbri/types";
@@ -8,6 +9,7 @@ import { InviteType, InviteStatus } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
 import GifPicker from "../components/GifPicker";
 import EmojiPickerButton from "../components/EmojiPickerButton";
+import { notification } from "../components/AppToaster";
 
 const INVITE_TYPES = [
   { type: InviteType.OUTSIDE, emoji: "🌿", label: "Go Outside" },
@@ -25,7 +27,7 @@ function getDisplayBadge(
 
   if (status === InviteStatus.RESCHEDULED) {
     return {
-      label: "Rescheduled 📅",
+      label: "Rescheduled",
       cls: "bg-purple-100 text-purple-700",
       extra: rescheduleDate ? `New date: ${format(new Date(rescheduleDate), "MMM d, yyyy")}` : undefined,
     };
@@ -35,16 +37,16 @@ function getDisplayBadge(
     const today = startOfDay(new Date());
     const eventDay = startOfDay(new Date(scheduledDate));
     const diff = differenceInDays(eventDay, today);
-    if (diff < 0) return { label: "Done 🥰", cls: "bg-gray-100 text-gray-500", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
-    if (diff === 0) return { label: "Ongoing! 🎉", cls: "bg-green-200 text-green-800", extra: "Today!" };
-    return { label: `${diff} day${diff !== 1 ? "s" : ""} left ✨`, cls: "bg-blue-100 text-blue-700", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
+    if (diff < 0) return { label: "Done", cls: "bg-gray-100 text-gray-500", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
+    if (diff === 0) return { label: "Ongoing", cls: "bg-green-200 text-green-800", extra: "Today" };
+    return { label: `${diff} day${diff !== 1 ? "s" : ""} left`, cls: "bg-blue-100 text-blue-700", extra: format(new Date(scheduledDate), "MMM d, yyyy") };
   }
 
   const map: Record<string, BadgeInfo> = {
-    PENDING: { label: "Pending ⏳", cls: "bg-yellow-100 text-yellow-700" },
-    ACCEPTED: { label: "Accepted 💚", cls: "bg-green-100 text-green-700" },
-    DECLINED: { label: "Declined 💔", cls: "bg-red-100 text-red-600" },
-    RESCHEDULED: { label: "Rescheduled 📅", cls: "bg-purple-100 text-purple-700" },
+    PENDING: { label: "Pending", cls: "bg-yellow-100 text-yellow-700" },
+    ACCEPTED: { label: "Accepted", cls: "bg-green-100 text-green-700" },
+    DECLINED: { label: "Declined", cls: "bg-red-100 text-red-600" },
+    RESCHEDULED: { label: "Rescheduled", cls: "bg-purple-100 text-purple-700" },
   };
   return map[status] ?? { label: status, cls: "bg-gray-100 text-gray-500" };
 }
@@ -69,10 +71,14 @@ const InvitesPage: React.FC = () => {
   const respondMutation = useMutation({
     mutationFn: ({ id, status, rescheduleDate }: { id: string; status: "ACCEPTED" | "DECLINED" | "RESCHEDULED"; rescheduleDate?: string }) =>
       invitesApi.respond(id, { status: status as any, rescheduleDate } as any),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["invites"] });
       setRescheduling(null);
+      notification.success(
+        variables.status === "ACCEPTED" ? "Invite accepted." : variables.status === "DECLINED" ? "Invite declined." : "Invite rescheduled."
+      );
     },
+    onError: (error) => notification.fromError(error, "Could not update this invite."),
   });
 
   const createMutation = useMutation({
@@ -80,7 +86,9 @@ const InvitesPage: React.FC = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["invites"] });
       setCreating(false);
+      notification.success("Invite sent.");
     },
+    onError: (error) => notification.fromError(error, "Could not send this invite."),
   });
 
   const list = tab === "inbox" ? inbox : sent;
@@ -88,12 +96,12 @@ const InvitesPage: React.FC = () => {
   return (
     <div className="p-6 max-w-xl mx-auto pb-28 md:pb-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-gray-800">Invites 💌</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-black text-gray-800"><Mail size={22} />Invites</h1>
         <button
           onClick={() => setCreating(true)}
           className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-2xl font-bold hover:opacity-90"
         >
-          + Send
+          <span className="inline-flex items-center gap-2"><Plus size={17} />Send</span>
         </button>
       </div>
 
@@ -109,7 +117,7 @@ const InvitesPage: React.FC = () => {
                 : "bg-white text-gray-500 border border-gray-100"
             }`}
           >
-            {t === "inbox" ? "📬 Inbox" : "📤 Sent"}
+            <span className="inline-flex items-center justify-center gap-2">{t === "inbox" ? <Inbox size={16} /> : <Send size={16} />}{t === "inbox" ? "Inbox" : "Sent"}</span>
           </button>
         ))}
       </div>
@@ -118,7 +126,7 @@ const InvitesPage: React.FC = () => {
       <div className="flex flex-col gap-4">
         {list.length === 0 ? (
           <div className="text-center text-gray-400 font-medium py-10">
-            No invites here yet 💌
+            No invites here yet.
           </div>
         ) : (
           list.map((invite) => {
@@ -155,12 +163,12 @@ const InvitesPage: React.FC = () => {
                     </div>
                     {inv.scheduledDate && invite.status !== InviteStatus.RESCHEDULED && (
                       <div className="text-xs text-indigo-500 font-semibold mt-1">
-                        📅 {format(new Date(inv.scheduledDate), "MMM d, yyyy")}
+                        <span className="inline-flex items-center gap-1"><CalendarDays size={13} />{format(new Date(inv.scheduledDate), "MMM d, yyyy")}</span>
                       </div>
                     )}
                     {invite.status === InviteStatus.RESCHEDULED && inv.rescheduleDate && (
                       <div className="text-xs text-purple-600 font-semibold mt-1">
-                        🔄 New date: {format(new Date(inv.rescheduleDate), "MMM d, yyyy")}
+                        <span className="inline-flex items-center gap-1"><RotateCw size={13} />New date: {format(new Date(inv.rescheduleDate), "MMM d, yyyy")}</span>
                       </div>
                     )}
                   </div>
@@ -183,20 +191,20 @@ const InvitesPage: React.FC = () => {
                           disabled={respondMutation.isPending}
                           className="flex-1 py-2 rounded-2xl bg-green-100 text-green-700 font-bold hover:bg-green-200 text-sm disabled:opacity-50"
                         >
-                          💚 Accept
+                          <span className="inline-flex items-center justify-center gap-1.5"><Check size={15} />Accept</span>
                         </button>
                         <button
                           onClick={() => respondMutation.mutate({ id: invite.id, status: "DECLINED" })}
                           disabled={respondMutation.isPending}
                           className="flex-1 py-2 rounded-2xl bg-red-50 text-red-500 font-bold hover:bg-red-100 text-sm disabled:opacity-50"
                         >
-                          💔 Decline
+                          Decline
                         </button>
                         <button
                           onClick={() => setRescheduling({ id: invite.id, date: "" })}
                           className="flex-1 py-2 rounded-2xl bg-purple-50 text-purple-600 font-bold hover:bg-purple-100 text-sm"
                         >
-                          📅 Reschedule
+                          <span className="inline-flex items-center justify-center gap-1.5"><CalendarDays size={15} />Reschedule</span>
                         </button>
                       </div>
                     ) : (
@@ -220,7 +228,7 @@ const InvitesPage: React.FC = () => {
                             onClick={() => respondMutation.mutate({ id: invite.id, status: "RESCHEDULED", rescheduleDate: rescheduling.date })}
                             className="flex-1 py-2 rounded-2xl bg-purple-500 text-white font-bold hover:bg-purple-600 disabled:opacity-50 text-sm"
                           >
-                            {respondMutation.isPending ? "Saving..." : "Confirm 📅"}
+                            {respondMutation.isPending ? "Saving…" : "Confirm"}
                           </button>
                         </div>
                       </div>
@@ -280,9 +288,15 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    const toastId = notification.loading("Uploading invite photo…");
     try {
       const { url } = await uploadApi.image(file);
       setImageUrl(url);
+      notification.dismiss(toastId);
+      notification.success("Invite photo added.");
+    } catch (caughtError) {
+      notification.dismiss(toastId);
+      notification.fromError(caughtError, "Could not upload that photo.");
     } finally {
       setUploading(false);
     }
@@ -303,9 +317,9 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-4xl w-full max-w-md p-8 shadow-2xl my-4"
+          className="my-4 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-4xl bg-white p-5 shadow-2xl sm:p-8"
         >
-          <h2 className="text-2xl font-black text-gray-800 mb-6">Send a Date Invite 💌</h2>
+          <h2 className="mb-6 flex items-center gap-2 text-2xl font-black text-gray-800"><Mail size={22} />Send a date invite</h2>
 
           {/* Type Picker */}
           <div className="grid grid-cols-2 gap-3 mb-6">
@@ -336,7 +350,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write a sweet message... 💕"
+                placeholder="Write a sweet message…"
                 rows={3}
                 className="w-full rounded-2xl border border-gray-200 px-4 py-3 font-medium outline-none focus:border-[var(--color-primary)] resize-none"
               />
@@ -357,7 +371,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
             {/* Scheduled Date */}
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
-                📅 Schedule for (optional)
+                <span className="inline-flex items-center gap-1.5"><CalendarDays size={14} />Schedule for (optional)</span>
               </label>
               <input
                 type="date"
@@ -371,7 +385,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
                 GIF {gifUrl && "✓"}
               </button>
               <label className="px-4 py-2 rounded-2xl bg-gray-100 font-bold text-gray-600 cursor-pointer">
-                📸 Camera {imageUrl && "✓"}
+                <span className="inline-flex items-center gap-1.5"><Camera size={15} />Camera {imageUrl && "✓"}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -381,7 +395,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
                 />
               </label>
               <label className="px-4 py-2 rounded-2xl bg-gray-100 font-bold text-gray-600 cursor-pointer">
-                🖼️ Gallery {imageUrl && "✓"}
+                <span className="inline-flex items-center gap-1.5"><ImageIcon size={15} />Gallery {imageUrl && "✓"}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
               </label>
             </div>
@@ -394,7 +408,7 @@ const CreateInviteModal: React.FC<CreateInviteModalProps> = ({ open, onClose, on
                 disabled={!title || !message || loading}
                 className="flex-1 py-3 rounded-2xl bg-[var(--color-primary)] text-white font-black disabled:opacity-50"
               >
-                {loading ? "Sending..." : "Send 💌"}
+                {loading ? "Sending…" : <span className="inline-flex items-center justify-center gap-2"><Send size={16} />Send</span>}
               </button>
             </div>
           </div>

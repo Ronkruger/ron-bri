@@ -1,33 +1,30 @@
 import React, { useRef, useState } from "react";
 import { authApi, uploadApi } from "@ronbri/api-client";
+import { Camera } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { notification } from "../components/AppToaster";
 
 const ProfilePage: React.FC = () => {
   const { user, setCurrentUser } = useAuth();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    setError("");
+    const toastId = notification.loading("Uploading profile photo…");
 
     try {
       const { url } = await uploadApi.image(file);
       const updatedUser = await authApi.updateAvatar(url);
       setCurrentUser(updatedUser);
+      notification.dismiss(toastId);
+      notification.success("Profile photo updated.");
     } catch (caughtError) {
-      const message =
-        typeof caughtError === "object" &&
-        caughtError !== null &&
-        "response" in caughtError &&
-        typeof (caughtError as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
-          ? (caughtError as { response?: { data?: { message?: string } } }).response!.data!.message!
-          : "Could not update your profile photo. Try again.";
-      setError(message);
+      notification.dismiss(toastId);
+      notification.fromError(caughtError, "Could not update your profile photo. Try again.");
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -37,7 +34,7 @@ const ProfilePage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 p-6 md:p-10">
+    <div className="profile-page min-h-screen p-6 md:p-10">
       <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur rounded-[2rem] shadow-xl border border-white/60 overflow-hidden">
         <div className="p-8 md:p-10 border-b border-gray-100">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -52,7 +49,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex-1">
               <p className="text-sm uppercase tracking-[0.2em] text-gray-400 font-bold">Profile</p>
               <h1 className="text-4xl font-black text-gray-800 mt-2">{user.displayName}</h1>
-              <p className="text-gray-500 mt-2">This is your cute little identity card inside RonBri.</p>
+              <p className="text-gray-500 mt-2">Your identity card inside RonBri.</p>
 
               <div className="flex flex-wrap gap-3 mt-5">
                 <button
@@ -60,7 +57,7 @@ const ProfilePage: React.FC = () => {
                   disabled={uploading}
                   className="px-5 py-3 rounded-2xl bg-[var(--color-primary)] text-white font-black disabled:opacity-60"
                 >
-                  {uploading ? "Uploading..." : "Upload Profile Photo"}
+                  <span className="inline-flex items-center gap-2"><Camera size={17} />{uploading ? "Uploading…" : "Upload profile photo"}</span>
                 </button>
               </div>
               <input
@@ -70,7 +67,6 @@ const ProfilePage: React.FC = () => {
                 className="hidden"
                 onChange={handleAvatarUpload}
               />
-              {error && <p className="mt-3 text-sm font-semibold text-red-500">{error}</p>}
             </div>
           </div>
         </div>
@@ -82,7 +78,7 @@ const ProfilePage: React.FC = () => {
           </div>
           <div className="rounded-3xl bg-gray-50 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Role</p>
-            <p className="mt-2 text-lg font-bold text-gray-800">{user.role === "BOY" ? "Ron Ron 💙" : "BriBri 💛"}</p>
+            <p className="mt-2 text-lg font-bold text-gray-800">{user.role === "BOY" ? "Ron Ron" : "BriBri"}</p>
           </div>
           <div className="rounded-3xl bg-gray-50 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Theme</p>

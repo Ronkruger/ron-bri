@@ -13,10 +13,12 @@ type ApiResponse<T> = {
 };
 
 const resolveBaseUrl = (): string => {
+  const browserLocation = (globalThis as { location?: { origin?: unknown } }).location;
+  const browserOrigin = typeof browserLocation?.origin === "string" ? browserLocation.origin : undefined;
   const raw =
     (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
       ? process.env.EXPO_PUBLIC_API_URL
-      : (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:3001")
+      : (import.meta as any)?.env?.VITE_API_URL ?? browserOrigin ?? "https://api.ronbri.invalid")
       .trim();
 
   let normalized = raw;

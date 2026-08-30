@@ -38,6 +38,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
       "@ronbri/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
       "@ronbri/api-client": path.resolve(__dirname, "../../packages/api-client/src/index.ts"),
+      "@ronbri/ui-tokens": path.resolve(__dirname, "../../packages/ui-tokens/src/index.ts"),
     },
   },
   server: {

@@ -13,6 +13,8 @@ import { invitesApi } from "@ronbri/api-client";
 import type { DateInvite } from "@ronbri/types";
 import { InviteStatus } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
+import { Icon, useUiTheme } from "../../components/ui";
+import { mobileNotification } from "../../components/toast";
 
 const STATUS_COLORS: Record<InviteStatus, { bg: string; text: string }> = {
   [InviteStatus.PENDING]: { bg: "#FEF9C3", text: "#A16207" },
@@ -25,11 +27,12 @@ const INVITE_EMOJIS: Record<string, string> = {
   OUTSIDE: "🌿",
   FOOD: "🍜",
   BONDING: "🎮",
-  CUSTOM: "✨",
+  CUSTOM: "✦",
 };
 
 export default function InvitesScreen() {
   const { user } = useAuth();
+  const theme = useUiTheme(user?.role);
   const qc = useQueryClient();
   const [tab, setTab] = useState<"inbox" | "sent">("inbox");
 
@@ -45,42 +48,45 @@ export default function InvitesScreen() {
   const respondMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "ACCEPTED" | "DECLINED" }) =>
       invitesApi.respond(id, { status: status as any }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["invites"] }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["invites"] });
+      mobileNotification.success(variables.status === "ACCEPTED" ? "Invite accepted." : "Invite declined.");
+    },
+    onError: (error) => mobileNotification.fromError(error, "Could not respond to this invite."),
   });
 
-  const isGirl = user?.role === "GIRL";
-  const primaryColor = isGirl ? "#EAB308" : "#3B82F6";
+  const primaryColor = theme.accent.primary;
 
   const list = tab === "inbox" ? inbox : sent;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Invites 💌</Text>
+        <Text style={[styles.title, { color: theme.text }]}><Icon name="email-outline" size={21} color={primaryColor} /> Invites</Text>
       </View>
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { backgroundColor: theme.surface }]}>
         {(["inbox", "sent"] as const).map((t) => (
           <TouchableOpacity
             key={t}
             onPress={() => setTab(t)}
             style={[styles.tab, tab === t && { backgroundColor: primaryColor }]}
           >
-            <Text style={[styles.tabText, tab === t && { color: "#fff" }]}>
-              {t === "inbox" ? "📬 Inbox" : "📤 Sent"}
+            <Text style={[styles.tabText, { color: tab === t ? "#fff" : theme.textMuted }]}>
+              <Icon name={t === "inbox" ? "inbox-arrow-down-outline" : "send-outline"} size={15} color={tab === t ? "#fff" : theme.textMuted} /> {t === "inbox" ? "Inbox" : "Sent"}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
         {list.length === 0 ? (
-          <Text style={styles.empty}>No invites here 💌</Text>
+          <Text style={[styles.empty, { color: theme.textMuted }]}>No invites here.</Text>
         ) : (
           list.map((invite) => {
             const sc = STATUS_COLORS[invite.status];
             return (
-              <View key={invite.id} style={styles.card}>
+              <View key={invite.id} style={[styles.card, { backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}>
                 <View style={styles.cardTop}>
-                  <Text style={styles.cardEmoji}>{INVITE_EMOJIS[invite.type] ?? "💌"}</Text>
+                  <Text style={styles.cardEmoji}>{INVITE_EMOJIS[invite.type] ?? "✦"}</Text>
                   <View style={styles.cardInfo}>
                     <Text style={styles.cardTitle}>{invite.title}</Text>
                     <Text style={styles.cardMessage}>{invite.message}</Text>
@@ -101,13 +107,13 @@ export default function InvitesScreen() {
                       onPress={() => respondMutation.mutate({ id: invite.id, status: "ACCEPTED" })}
                       style={[styles.actionBtn, { backgroundColor: "#DCFCE7" }]}
                     >
-                      <Text style={{ color: "#166534", fontWeight: "800" }}>💚 Accept</Text>
+                      <Text style={{ color: "#166534", fontWeight: "800" }}><Icon name="check" size={15} color="#166534" /> Accept</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => respondMutation.mutate({ id: invite.id, status: "DECLINED" })}
                       style={[styles.actionBtn, { backgroundColor: "#FEE2E2" }]}
                     >
-                      <Text style={{ color: "#DC2626", fontWeight: "800" }}>💔 Decline</Text>
+                      <Text style={{ color: "#DC2626", fontWeight: "800" }}><Icon name="close" size={15} color="#DC2626" /> Decline</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -121,15 +127,15 @@ export default function InvitesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  title: { fontSize: 20, fontWeight: "900", color: "#1f2937" },
-  tabs: { flexDirection: "row", gap: 8, padding: 12, backgroundColor: "#fff" },
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: "rgba(255,253,249,.86)", borderBottomWidth: 1, borderBottomColor: "rgba(185,130,103,.18)" },
+  title: { fontSize: 20, fontWeight: "900" },
+  tabs: { flexDirection: "row", gap: 8, padding: 12 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 16, alignItems: "center", backgroundColor: "#f3f4f6" },
   tabText: { fontWeight: "800", color: "#6b7280", fontSize: 14 },
   scroll: { padding: 16, paddingBottom: 40 },
   empty: { textAlign: "center", color: "#9ca3af", fontWeight: "600", marginTop: 40 },
-  card: { backgroundColor: "#fff", borderRadius: 20, padding: 16, marginBottom: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 3 },
+  card: { borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, shadowColor: "#9d654d", shadowOpacity: 0.05, shadowRadius: 6, elevation: 3 },
   cardTop: { flexDirection: "row", gap: 10 },
   cardEmoji: { fontSize: 28 },
   cardInfo: { flex: 1 },

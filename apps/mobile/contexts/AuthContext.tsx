@@ -23,11 +23,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const refreshToken = await SecureStore.getItemAsync("refreshToken");
       if (!refreshToken) throw new Error("No refresh token");
 
-      const { data } = await apiClient.post<{ accessToken: string }>(
+      const { data } = await apiClient.post<{ accessToken: string; refreshToken?: string }>(
         "/auth/refresh",
         {},
         { headers: { "x-refresh-token": refreshToken } }
       );
+      if (data.refreshToken) {
+        await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      }
       setAccessToken(data.accessToken);
       const me = await authApi.me();
       setUser(me);
@@ -45,10 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [bootstrap]);
 
   const login = async (username: string, password: string) => {
-    const { user: u, accessToken } = await authApi.login(username, password);
+    const { user: u, accessToken, refreshToken } = await authApi.loginMobile(username, password);
+    if (!refreshToken) {
+      throw new Error("The server did not return a mobile refresh token.");
+    }
+    await SecureStore.setItemAsync("refreshToken", refreshToken);
     setAccessToken(accessToken);
-    // Store refresh token from cookie — mobile needs a custom header approach
-    // Server will also send it in body for mobile clients
     setUser(u);
     connectSocket();
   };

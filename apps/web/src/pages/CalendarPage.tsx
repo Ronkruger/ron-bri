@@ -4,10 +4,12 @@ import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
+import { CalendarDays, Camera, Pencil, Plus, Upload, X } from "lucide-react";
 import { calendarApi, uploadApi } from "@ronbri/api-client";
 import type { DateEvent, CreateEventPayload } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { notification } from "../components/AppToaster";
 
 const locales = { "en-US": enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -27,13 +29,21 @@ const CalendarPage: React.FC = () => {
 
   const createMutation = useMutation({
     mutationFn: (p: CreateEventPayload) => calendarApi.create(p),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calendar"] });
+      notification.success("Date added to your calendar.");
+    },
+    onError: (error) => notification.fromError(error, "Could not create this date."),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<CreateEventPayload> }) =>
       calendarApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["calendar"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calendar"] });
+      notification.success("Date updated.");
+    },
+    onError: (error) => notification.fromError(error, "Could not update this date."),
   });
 
   const deleteMutation = useMutation({
@@ -41,7 +51,9 @@ const CalendarPage: React.FC = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["calendar"] });
       setPanelEvent(null);
+      notification.success("Date deleted.");
     },
+    onError: (error) => notification.fromError(error, "Could not delete this date."),
   });
 
   const calendarEvents = events.map((e) => ({
@@ -54,8 +66,8 @@ const CalendarPage: React.FC = () => {
 
   const eventStyleGetter = (event: (typeof calendarEvents)[0]) => {
     const role = event.resource.createdBy?.role;
-    const bg = role === "BOY" ? "#3B82F6" : "#EAB308";
-    return { style: { backgroundColor: bg, color: "#fff", borderRadius: 12, border: "none", fontWeight: 700 } };
+    const bg = role === "BOY" ? "#7c9fd6" : "#c69732";
+    return { style: { backgroundColor: bg, color: "#fffdf7", borderRadius: 12, border: "none", fontWeight: 700 } };
   };
 
   const handleSelectSlot = ({ start }: { start: Date }) => {
@@ -69,19 +81,19 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] md:h-screen">
+    <div className="calendar-page relative flex min-h-[calc(100vh-4rem)] md:h-screen">
       {/* Calendar */}
-      <div className="flex-1 p-6 overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-black text-gray-800">Calendar 📅</h1>
+      <div className="calendar-content min-w-0 flex-1 overflow-visible p-4 md:p-6">
+        <div className="calendar-header flex items-center justify-between mb-4">
+          <h1 className="flex items-center gap-2 text-2xl font-black text-gray-800"><CalendarDays size={23} />Calendar</h1>
           <button
             onClick={() => { setEditTarget(null); setSelectedSlot(new Date()); setModalOpen(true); }}
             className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-2xl font-bold hover:opacity-90 transition-opacity"
           >
-            + New Date
+            <span className="inline-flex items-center gap-2"><Plus size={17} />New date</span>
           </button>
         </div>
-        <div className="h-[calc(100%-4rem)] bg-white rounded-3xl shadow-sm p-4">
+        <div className="calendar-shell bg-white rounded-3xl shadow-sm p-4">
           <Calendar
             localizer={localizer}
             events={calendarEvents}
@@ -104,13 +116,13 @@ const CalendarPage: React.FC = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 320, opacity: 0 }}
             transition={{ type: "spring", damping: 25 }}
-            className="w-80 bg-white shadow-xl border-l border-gray-100 p-6 flex flex-col gap-4 overflow-y-auto"
+            className="fixed inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col gap-4 overflow-y-auto border-l border-gray-100 bg-white p-6 shadow-xl md:static md:w-80"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-gray-800">Event</h2>
-              <button onClick={() => setPanelEvent(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+              <button onClick={() => setPanelEvent(null)} className="ui-icon-button" aria-label="Close event details"><X size={18} /></button>
             </div>
-            <div className="text-4xl">{panelEvent.emoji ?? "📅"}</div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-light)] text-4xl text-[var(--color-accent)]">{panelEvent.emoji ?? <CalendarDays size={25} />}</div>
             <div>
               <div className="text-xl font-black text-gray-800">{panelEvent.title}</div>
               {panelEvent.description && (
@@ -210,9 +222,15 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    const toastId = notification.loading("Uploading event photo…");
     try {
       const { url } = await uploadApi.image(file);
       setImageUrl(url);
+      notification.dismiss(toastId);
+      notification.success("Event photo added.");
+    } catch (caughtError) {
+      notification.dismiss(toastId);
+      notification.fromError(caughtError, "Could not upload that photo.");
     } finally {
       setUploading(false);
     }
@@ -233,10 +251,10 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-4xl w-full max-w-md p-8 shadow-2xl"
+          className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-4xl bg-white p-5 shadow-2xl sm:p-8"
         >
           <h2 className="text-2xl font-black text-gray-800 mb-6">
-            {initial ? "Edit Date ✏️" : "New Date 📅"}
+            <span className="inline-flex items-center gap-2">{initial ? <Pencil size={19} /> : <CalendarDays size={19} />}{initial ? "Edit date" : "New date"}</span>
           </h2>
           <div className="flex flex-col gap-4">
             <input
@@ -277,11 +295,11 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-gray-500">Photo (optional)</span>
               <label className="ml-auto text-sm px-3 py-1 rounded-xl bg-gray-100 font-semibold cursor-pointer">
-                🖼️ {uploading ? "Uploading..." : imageUrl ? "Change" : "Upload"}
+                <span className="inline-flex items-center gap-1.5"><Upload size={15} />{uploading ? "Uploading…" : imageUrl ? "Change" : "Upload"}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleImage} />
               </label>
               <label className="text-sm px-3 py-1 rounded-xl bg-gray-100 font-semibold cursor-pointer">
-                📸 Camera
+                <span className="inline-flex items-center gap-1.5"><Camera size={15} />Camera</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -303,7 +321,7 @@ const EventModal: React.FC<EventModalProps> = ({ open, onClose, initial, default
                 disabled={!title || !date}
                 className="flex-1 py-3 rounded-2xl bg-[var(--color-primary)] text-white font-black disabled:opacity-50"
               >
-                {initial ? "Save" : "Create ✨"}
+                {initial ? "Save" : "Create"}
               </button>
             </div>
           </div>

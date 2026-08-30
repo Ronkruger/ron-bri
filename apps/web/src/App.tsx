@@ -10,6 +10,7 @@ import CalendarPage from "./pages/CalendarPage";
 import ChatPage from "./pages/ChatPage";
 import InvitesPage from "./pages/InvitesPage";
 import ProfilePage from "./pages/ProfilePage";
+import { AppToaster } from "./components/AppToaster";
 
 const App: React.FC = () => (
   <BrowserRouter>
@@ -33,6 +34,7 @@ const App: React.FC = () => (
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <AppToaster />
       </ThemeProvider>
     </AuthProvider>
   </BrowserRouter>

@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
+import { SmilePlus } from "lucide-react";
 
 interface EmojiPickerButtonProps {
   onPick: (emoji: string) => void;
@@ -16,9 +17,11 @@ const EmojiPickerButton: React.FC<EmojiPickerButtonProps> = ({ onPick }) => {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-xl hover:bg-gray-200 transition-colors"
+        aria-label="Open emoji picker"
+        title="Add emoji"
+        className="ui-icon-button"
       >
-        😊
+        <SmilePlus size={19} />
       </button>
       <AnimatePresence>
         {open && (

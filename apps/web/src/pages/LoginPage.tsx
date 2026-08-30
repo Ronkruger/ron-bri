@@ -1,163 +1,187 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Heart, LockKeyhole, LogIn, Sparkles } from "lucide-react";
+import { authApi } from "@ronbri/api-client";
+import type { PublicAccount } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
-
-const sparkles = [
-  { top: "8%", left: "12%", size: 28, delay: 0 },
-  { top: "15%", left: "78%", size: 18, delay: 0.3 },
-  { top: "30%", left: "5%", size: 14, delay: 0.6 },
-  { top: "60%", left: "88%", size: 22, delay: 0.2 },
-  { top: "75%", left: "70%", size: 16, delay: 0.5 },
-  { top: "80%", left: "18%", size: 20, delay: 0.8 },
-  { top: "45%", left: "92%", size: 12, delay: 0.4 },
-  { top: "20%", left: "55%", size: 10, delay: 0.7 },
-];
+import { Avatar, Button, Card, CardContent, TextField } from "../components/ui";
+import { notification } from "../components/AppToaster";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<"boy" | "girl" | null>(null);
+  const [accounts, setAccounts] = useState<PublicAccount[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [selected, setSelected] = useState<PublicAccount | null>(null);
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSelect = (who: "boy" | "girl") => {
-    setSelected(who);
+  useEffect(() => {
+    let active = true;
+    authApi.accounts()
+      .then((data) => {
+        if (active) setAccounts(data);
+      })
+      .catch((caughtError) => {
+        if (active) {
+          notification.fromError(caughtError, "Unable to load accounts. Please try again.");
+        }
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleSelect = (account: PublicAccount) => {
+    setSelected(account);
     setPassword("");
-    setError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!selected) return;
     setLoading(true);
-    setError("");
     try {
-      const username = selected === "boy" ? "ronron" : "bribri";
-      await login(username, password);
+      await login(selected.username, password);
+      notification.success(`Welcome back, ${selected.displayName}.`);
       navigate("/");
-    } catch {
-      setError("Wrong password. Try again! 💔");
+    } catch (caughtError) {
+      notification.fromError(caughtError, "That password was not accepted. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #f9c0e0 0%, #e8d5f5 40%, #c9d8f5 100%)" }}
-    >
-      {/* Sparkle decorations */}
-      {sparkles.map((s, i) => (
-        <motion.div
-          key={i}
-          className="absolute pointer-events-none select-none text-yellow-400"
-          style={{ top: s.top, left: s.left, fontSize: s.size }}
-          animate={{ opacity: [0.5, 1, 0.5], scale: [0.9, 1.15, 0.9], rotate: [0, 20, -20, 0] }}
-          transition={{ duration: 3 + s.delay, repeat: Infinity, delay: s.delay, ease: "easeInOut" }}
-        >
-          ✦
-        </motion.div>
-      ))}
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden="true">
+        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[var(--color-light)] blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-slate-300/40 blur-3xl dark:bg-slate-700/30" />
+      </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-3xl shadow-2xl px-10 py-12 w-full max-w-sm mx-4 flex flex-col items-center gap-5"
+        transition={{ duration: 0.35 }}
+        className="relative z-10 w-full max-w-md"
       >
-        <div className="text-3xl">✦</div>
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Babi Time</h1>
-        <p className="text-gray-500 text-center text-sm font-medium -mt-2">
-          Choose your side to enter your shared love space.
-        </p>
+        <Card className="overflow-hidden">
+          <div className="border-b border-[var(--line)] px-7 py-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-light)] text-[var(--color-accent)]">
+                <Heart size={20} fill="currentColor" />
+              </div>
+              <Sparkles size={18} className="text-[var(--color-accent)]" aria-hidden="true" />
+            </div>
+            <p className="ui-eyebrow">Private space</p>
+            <h1 className="text-3xl font-extrabold tracking-tight">Welcome back</h1>
+            <p className="mt-2 text-sm text-gray-500">Choose your account to continue to RonBri.</p>
+          </div>
 
-        <AnimatePresence mode="wait">
-          {!selected ? (
-            <motion.div
-              key="buttons"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col gap-3 w-full"
-            >
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handleSelect("boy")}
-                className="w-full py-4 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-base transition-colors"
-              >
-                Login as Ronron
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handleSelect("girl")}
-                className="w-full py-4 rounded-2xl font-bold text-base transition-colors text-white"
-                style={{ background: "#d4a017" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#b8880f")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#d4a017")}
-              >
-                Login as Bribri
-              </motion.button>
-            </motion.div>
-          ) : (
-            <motion.form
-              key="password"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              onSubmit={handleSubmit}
-              className="flex flex-col gap-3 w-full"
-            >
-              <p className="text-center text-sm font-semibold text-gray-600">
-                {selected === "boy" ? "💙 Ronron" : "💛 Bribri"} — enter your password
-              </p>
-              <input
-                type="password"
-                autoFocus
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password 🔒"
-                className={`w-full rounded-2xl px-5 py-4 text-center text-base font-bold border-2 outline-none transition-all ${
-                  selected === "boy"
-                    ? "border-blue-300 focus:border-blue-500 bg-blue-50"
-                    : "border-yellow-300 focus:border-yellow-500 bg-yellow-50"
-                }`}
-              />
-              {error && (
-                <motion.p
+          <CardContent className="px-7 py-7">
+            <AnimatePresence mode="wait">
+              {!selected ? (
+                <motion.div
+                  key="accounts"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-red-500 text-center text-sm font-medium"
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
                 >
-                  {error}
-                </motion.p>
+                  {accountsLoading ? (
+                    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-8 text-center text-sm font-semibold text-gray-500">
+                      Loading accounts…
+                    </div>
+                  ) : accounts.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[var(--line)] px-4 py-8 text-center text-sm font-semibold text-gray-500">
+                      No accounts are available.
+                    </div>
+                  ) : (
+                    accounts.map((account) => {
+                      const isBoy = account.role === "BOY";
+                      return (
+                        <Button
+                          key={account.id}
+                          variant="outline"
+                          fullWidth
+                          onClick={() => handleSelect(account)}
+                          leftIcon={<Avatar src={account.avatar} name={account.displayName} size="sm" />}
+                          className="justify-start gap-3 px-3 py-3 text-left"
+                          style={{
+                            borderColor: isBoy ? "#b9d1ff" : "#f0d77b",
+                            backgroundColor: isBoy ? "rgba(233, 241, 255, .52)" : "rgba(255, 247, 214, .58)",
+                          }}
+                        >
+                          <span className="flex flex-col items-start">
+                            <span className="font-extrabold">{account.displayName}</span>
+                            <span className="text-xs font-medium text-gray-500">Continue as {account.username}</span>
+                          </span>
+                        </Button>
+                      );
+                    })
+                  )}
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="password"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center gap-3 rounded-xl bg-[var(--surface-muted)] p-3">
+                    <Avatar src={selected.avatar} name={selected.displayName} size="md" />
+                    <div>
+                      <div className="font-extrabold">{selected.displayName}</div>
+                      <div className="text-xs text-gray-500">{selected.username}</div>
+                    </div>
+                  </div>
+                  <label className="block text-sm font-bold" htmlFor="password">Password</label>
+                  <div className="relative">
+                    <LockKeyhole size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+                    <TextField
+                      id="password"
+                      type="password"
+                      autoFocus
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Enter your password"
+                      className="password-field"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    fullWidth
+                    loading={loading}
+                    loadingText="Signing in…"
+                    disabled={!password}
+                    rightIcon={<LogIn size={17} />}
+                  >
+                    Sign in
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    fullWidth
+                    onClick={() => setSelected(null)}
+                    leftIcon={<ArrowLeft size={16} />}
+                  >
+                    Choose another account
+                  </Button>
+                </motion.form>
               )}
-              <button
-                type="submit"
-                disabled={loading || !password}
-                className={`w-full rounded-2xl py-4 font-bold text-base text-white transition-all ${
-                  selected === "boy"
-                    ? "bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300"
-                    : "bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-300"
-                }`}
-              >
-                {loading ? "Logging in..." : "Let me in 🏠"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="text-gray-400 text-sm hover:text-gray-600 transition-colors"
-              >
-                ← Go back
-              </button>
-            </motion.form>
-          )}
-        </AnimatePresence>
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+        <p className="mt-4 text-center text-xs font-medium text-gray-400">Your shared space is private to you both.</p>
       </motion.div>
-    </div>
+    </main>
   );
 };
 

@@ -31,6 +31,15 @@ export interface User {
   createdAt: string;
 }
 
+export interface PublicAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  role: Role;
+  theme: string;
+  avatar: string | null;
+}
+
 export interface DateEvent {
   id: string;
   title: string;
@@ -108,6 +117,8 @@ export interface LoginPayload {
 export interface AuthResponse {
   user: User;
   accessToken: string;
+  /** Present only for the explicitly identified native client. */
+  refreshToken?: string;
 }
 
 // ─── Socket Event Payloads ────────────────────────────────────────────────────

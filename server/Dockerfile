@@ -5,18 +5,16 @@ WORKDIR /app
 # Copy root package files for workspace resolution
 COPY package.json package-lock.json turbo.json ./
 
-# Copy workspace packages the server depends on
-COPY packages/tsconfig ./packages/tsconfig
-COPY packages/types ./packages/types
-
-# Copy server source
+# Copy the shared packages, web app, and API source.
+COPY packages ./packages
+COPY apps/web ./apps/web
 COPY server ./server
 
-# Install all workspace deps from root
-RUN npm ci --workspace=server --workspace=packages/types --workspace=packages/tsconfig --include-workspace-root
+# Install the workspaces needed to build the deployable web/API service.
+RUN npm ci --workspace=web --workspace=server --workspace=packages/api-client --workspace=packages/types --workspace=packages/ui-tokens --workspace=packages/tsconfig --include-workspace-root
 
-# Build server (prisma generate + tsc)
-RUN npm run build --workspace=server
+# Build both parts. Express serves the web output in the final image.
+RUN npm run build --workspace=web && npm run build --workspace=server
 
 # ── Production image ──────────────────────────────────────────────────────────
 FROM node:20-alpine
@@ -32,6 +30,7 @@ RUN npm ci --omit=dev --workspace=server --workspace=packages/types --workspace=
 
 # Copy compiled output and prisma generated client from builder
 COPY --from=builder /app/server/dist ./server/dist
+COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 

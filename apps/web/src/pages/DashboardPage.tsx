@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import CountUp from "react-countup";
 import confetti from "canvas-confetti";
+import { CalendarDays, Heart } from "lucide-react";
 import {
   differenceInYears,
   differenceInMonths,
@@ -15,6 +16,7 @@ import { relationshipApi, calendarApi } from "@ronbri/api-client";
 import { getSocket, connectSocket } from "@ronbri/api-client";
 import { useAuth } from "../contexts/AuthContext";
 import type { DateEvent } from "@ronbri/types";
+import { notification } from "../components/AppToaster";
 
 interface FloatingHeart {
   id: number;
@@ -26,7 +28,6 @@ const DashboardPage: React.FC = () => {
   const confettiFired = useRef(false);
   const [heartSent, setHeartSent] = useState(false);
   const [incomingHearts, setIncomingHearts] = useState<FloatingHeart[]>([]);
-  const [showIncomingToast, setShowIncomingToast] = useState(false);
   const heartIdRef = useRef(0);
 
   const { data: rel } = useQuery({
@@ -46,8 +47,7 @@ const DashboardPage: React.FC = () => {
       const id = ++heartIdRef.current;
       const x = 30 + Math.random() * 40; // % from left
       setIncomingHearts((prev) => [...prev, { id, x }]);
-      setShowIncomingToast(true);
-      setTimeout(() => setShowIncomingToast(false), 3500);
+      notification.info(`${user?.role === "BOY" ? "BriBri" : "Ron Ron"} is thinking of you.`);
       setTimeout(() => setIncomingHearts((prev) => prev.filter((h) => h.id !== id)), 2500);
     };
     socket.on("heart:received", handleHeart);
@@ -58,6 +58,7 @@ const DashboardPage: React.FC = () => {
     if (heartSent) return;
     const socket = getSocket();
     socket.emit("heart:send");
+    notification.success("Heartbeat sent.");
     setHeartSent(true);
     setTimeout(() => setHeartSent(false), 3000);
   }, [heartSent]);
@@ -112,9 +113,9 @@ const DashboardPage: React.FC = () => {
           )}
           <div>
             <h1 className="text-3xl font-black text-gray-800">
-              Hey {user?.displayName}! {user?.role === "BOY" ? "💙" : "💛"}
+              Hey {user?.displayName}!
             </h1>
-            <p className="text-gray-500 font-medium mt-1">Here's your love dashboard 🌸</p>
+            <p className="text-gray-500 font-medium mt-1">Your shared space at a glance</p>
           </div>
         </div>
       </motion.div>
@@ -128,7 +129,7 @@ const DashboardPage: React.FC = () => {
       >
         <div className="text-center mb-6">
           <span className="text-2xl font-black text-gray-800">
-            💙 Ron Ron & BriBri 💛
+            <span className="inline-flex items-center gap-2"><Heart size={18} className="text-[var(--color-primary)]" fill="currentColor" />Ron Ron & BriBri</span>
           </span>
           <p className="text-gray-400 font-medium mt-1">Together for</p>
         </div>
@@ -155,7 +156,7 @@ const DashboardPage: React.FC = () => {
 
         {startDate && (
           <p className="text-center text-gray-400 font-medium mt-4 text-sm">
-            Since {format(startDate, "MMMM d, yyyy")} 🌸
+            Since {format(startDate, "MMMM d, yyyy")}
           </p>
         )}
       </motion.div>
@@ -179,7 +180,7 @@ const DashboardPage: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 2.2, ease: "easeOut" }}
             >
-              💓
+              <Heart size={34} className="text-[var(--color-primary)]" fill="currentColor" />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -200,30 +201,14 @@ const DashboardPage: React.FC = () => {
             animate={heartSent ? { scale: [1, 1.4, 1], rotate: [0, -10, 10, 0] } : {}}
             transition={{ duration: 0.5 }}
           >
-            {heartSent ? "💓" : "🤍"}
+            <Heart size={40} fill={heartSent ? "currentColor" : "none"} />
           </motion.span>
           <span className="font-black text-gray-700 text-base">
-            {heartSent ? "Sent! 💌" : `Send a heartbeat to ${user?.role === "BOY" ? "BriBri 💛" : "Ron Ron 💙"}`}
+            {heartSent ? "Sent" : `Send a heartbeat to ${user?.role === "BOY" ? "BriBri" : "Ron Ron"}`}
           </span>
           <span className="text-xs text-gray-400 font-medium">Tap to let them know you're thinking of them</span>
         </motion.button>
 
-        {/* Incoming toast */}
-        <AnimatePresence>
-          {showIncomingToast && (
-            <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-2 border border-pink-100 whitespace-nowrap z-10"
-            >
-              <span className="text-xl">💓</span>
-              <span className="font-bold text-gray-700 text-sm">
-                {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is thinking of you!
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
 
       {/* Upcoming Dates */}
@@ -232,10 +217,10 @@ const DashboardPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-xl font-black text-gray-700 mb-4">Upcoming Dates 📅</h2>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-black text-gray-700"><CalendarDays size={20} />Upcoming dates</h2>
         {upcoming.length === 0 ? (
           <div className="rounded-3xl bg-white border border-dashed border-gray-200 p-6 text-center text-gray-400 font-medium">
-            No upcoming dates — go plan something! 🗓️
+            No upcoming dates — go plan something together.
           </div>
         ) : (
           <div className="flex flex-col gap-3">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, X } from "lucide-react";
 import { giphyApi } from "@ronbri/api-client";
+import { notification } from "./AppToaster";
 
 interface GifPickerProps {
   open: boolean;
@@ -23,7 +25,10 @@ const GifPicker: React.FC<GifPickerProps> = ({ open, onClose, onSelect }) => {
     setLoading(true);
     giphyApi.trending(20)
       .then((data) => setGifs(data.data ?? []))
-      .catch(() => setGifs([]))
+      .catch((caughtError) => {
+        setGifs([]);
+        notification.fromError(caughtError, "Could not load GIFs.");
+      })
       .finally(() => setLoading(false));
   }, [open]);
 
@@ -33,6 +38,9 @@ const GifPicker: React.FC<GifPickerProps> = ({ open, onClose, onSelect }) => {
     try {
       const data = await giphyApi.search(query, 20);
       setGifs(data.data ?? []);
+    } catch (caughtError) {
+      setGifs([]);
+      notification.fromError(caughtError, "Could not search GIFs.");
     } finally {
       setLoading(false);
     }
@@ -63,10 +71,10 @@ const GifPicker: React.FC<GifPickerProps> = ({ open, onClose, onSelect }) => {
               placeholder="Search GIFs..."
               className="flex-1 rounded-2xl border border-gray-200 px-4 py-2 font-medium outline-none focus:border-[var(--color-primary)]"
             />
-            <button onClick={search} className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-2xl font-bold">
-              Search
+            <button onClick={search} className="ui-icon-button border-0 bg-[var(--color-primary)] text-white" aria-label="Search GIFs">
+              <Search size={17} />
             </button>
-            <button onClick={onClose} className="text-gray-400 text-2xl px-2">×</button>
+            <button onClick={onClose} className="ui-icon-button" aria-label="Close GIF picker"><X size={18} /></button>
           </div>
           <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-2">
             {loading && (

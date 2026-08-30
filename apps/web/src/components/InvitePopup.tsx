@@ -7,6 +7,8 @@ import type { DateInvite } from "@ronbri/types";
 import { InviteStatus } from "@ronbri/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
+import { Check, Heart, Mail, X } from "lucide-react";
+import { notification } from "./AppToaster";
 
 // Inline minimal envelope Lottie JSON (open envelope animation)
 // In production, replace with a proper Lottie JSON from lottiefiles.com
@@ -108,9 +110,15 @@ const InvitePopup: React.FC = () => {
   const handleRespond = async (status: "ACCEPTED" | "DECLINED") => {
     if (!current) return;
     setResponded(true);
-    await invitesApi.respond(current.id, { status: status as any });
-    qc.invalidateQueries({ queryKey: ["invites"] });
-    setTimeout(dismiss, 1200);
+    try {
+      await invitesApi.respond(current.id, { status: status as any });
+      qc.invalidateQueries({ queryKey: ["invites"] });
+      notification.success(status === "ACCEPTED" ? "Invite accepted." : "Invite declined.");
+      setTimeout(dismiss, 1200);
+    } catch (caughtError) {
+      setResponded(false);
+      notification.fromError(caughtError, "Could not respond to this invite.");
+    }
   };
 
   if (!current) return null;
@@ -143,7 +151,7 @@ const InvitePopup: React.FC = () => {
                 transition={{ repeat: Infinity, duration: 1.5 }}
                 className="text-white font-bold text-lg"
               >
-                Tap to open 💌
+                Tap to open
               </motion.div>
             </motion.div>
           ) : (
@@ -162,7 +170,7 @@ const InvitePopup: React.FC = () => {
                 transition={{ type: "spring", damping: 10, delay: 0.2 }}
                 className="text-5xl mb-4"
               >
-                💌
+                <Mail size={34} className="mx-auto text-[var(--color-accent)]" />
               </motion.div>
 
               <div className="text-xs font-bold uppercase tracking-widest text-[var(--color-primary)] mb-2">
@@ -188,13 +196,13 @@ const InvitePopup: React.FC = () => {
                     onClick={() => handleRespond("ACCEPTED")}
                     className="flex-1 py-3 rounded-2xl bg-green-100 text-green-700 font-black text-lg hover:bg-green-200"
                   >
-                    💚 Accept
+                    <span className="inline-flex items-center justify-center gap-2"><Check size={17} />Accept</span>
                   </button>
                   <button
                     onClick={() => handleRespond("DECLINED")}
                     className="flex-1 py-3 rounded-2xl bg-red-50 text-red-500 font-black text-lg hover:bg-red-100"
                   >
-                    💔 Decline
+                    <span className="inline-flex items-center justify-center gap-2"><X size={17} />Decline</span>
                   </button>
                 </div>
               ) : (
@@ -203,7 +211,7 @@ const InvitePopup: React.FC = () => {
                   animate={{ scale: 1 }}
                   className="text-4xl py-3"
                 >
-                  ✨
+                  <Heart size={34} className="mx-auto text-[var(--color-primary)]" fill="currentColor" />
                 </motion.div>
               )}
             </motion.div>

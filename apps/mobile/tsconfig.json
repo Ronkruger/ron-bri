@@ -11,7 +11,8 @@
     "outDir": "dist",
     "paths": {
       "@ronbri/types": ["../../packages/types/src/index.ts"],
-      "@ronbri/api-client": ["../../packages/api-client/src/index.ts"]
+      "@ronbri/api-client": ["../../packages/api-client/src/index.ts"],
+      "@ronbri/ui-tokens": ["../../packages/ui-tokens/src/index.ts"]
     }
   },
   "include": ["app/**/*", "components/**/*", "contexts/**/*"]

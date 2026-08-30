@@ -1,133 +1,162 @@
 import React, { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import {
+  Bot,
+  CalendarDays,
+  House,
+  LogOut,
+  Mail,
+  MessageCircle,
+  Moon,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeProvider";
 import InvitePopup from "../components/InvitePopup";
 import AIDrawer from "../components/AIDrawer";
+import { Avatar, Button } from "../components/ui";
+import { notification } from "../components/AppToaster";
 
 const navItems = [
-  { to: "/", label: "Home", emoji: "🏠", end: true },
-  { to: "/chat", label: "Chat", emoji: "💬", end: false },
-  { to: "/calendar", label: "Calendar", emoji: "📅", end: false },
-  { to: "/invites", label: "Invites", emoji: "💌", end: false },
-  { to: "/profile", label: "Profile", emoji: "👤", end: false },
+  { to: "/", label: "Home", icon: House, end: true },
+  { to: "/chat", label: "Chat", icon: MessageCircle, end: false },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays, end: false },
+  { to: "/invites", label: "Invites", icon: Mail, end: false },
+  { to: "/profile", label: "Profile", icon: UserRound, end: false },
 ];
 
 const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { mode, toggleMode } = useTheme();
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+      notification.success("You have been signed out.");
+      navigate("/login");
+    } catch (caughtError) {
+      notification.fromError(caughtError, "Could not sign out. Please try again.");
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar — desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm">
-        <div className="p-6 border-b border-gray-100">
+    <div className="darwin-shell flex min-h-screen">
+      <aside className="darwin-sidebar hidden md:flex w-72 shrink-0 flex-col border-r">
+        <div className="border-b p-6" style={{ borderColor: "var(--line)" }}>
           <div className="flex items-center gap-3">
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-2xl object-cover border border-gray-100" />
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-[var(--color-light)] text-[var(--color-accent)] flex items-center justify-center font-black text-lg">
-                {user?.displayName?.charAt(0) ?? "R"}
-              </div>
-            )}
-            <div>
-              <div className="text-2xl font-black text-gray-800">RonBri</div>
-              <div className="text-sm text-gray-400 mt-1">
-                {user?.displayName}{" "}
-                <span className="inline-block w-2 h-2 rounded-full bg-green-400 ml-1" />
+            <Avatar src={user?.avatar} name={user?.displayName} size="md" />
+            <div className="min-w-0">
+              <div className="truncate text-lg font-extrabold tracking-tight">RonBri</div>
+              <div className="mt-0.5 flex items-center gap-2 truncate text-xs font-medium text-gray-500">
+                {user?.displayName}
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-label="Online" />
               </div>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 flex flex-col gap-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-all ${
-                  isActive
-                    ? "bg-[var(--color-light)] text-[var(--color-accent)]"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`
-              }
-            >
-              <span className="text-xl">{item.emoji}</span>
-              {item.label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 space-y-1 p-4" aria-label="Primary navigation">
+          <p className="ui-eyebrow px-3 pb-2 pt-1">Workspace</p>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ${
+                    isActive
+                      ? "bg-[var(--color-light)] text-[var(--color-accent)]"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  }`
+                }
+              >
+                <Icon size={18} strokeWidth={2.2} />
+                {item.label}
+              </NavLink>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-500 font-semibold transition-all"
+        <div className="space-y-2 border-t p-4" style={{ borderColor: "var(--line)" }}>
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={toggleMode}
+            leftIcon={mode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            className="justify-start text-gray-500"
+            aria-label={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
           >
-            <span className="text-xl">👋</span>
-            Log Out
-          </button>
+            {mode === "dark" ? "Light appearance" : "Dark appearance"}
+          </Button>
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={handleLogout}
+            leftIcon={<LogOut size={17} />}
+            className="justify-start text-gray-500 hover:text-red-500"
+          >
+            Log out
+          </Button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="darwin-main flex flex-1 flex-col overflow-hidden">
         <motion.div
-          className="flex-1 overflow-auto"
-          initial={{ opacity: 0, y: 12 }}
+          className="darwin-content flex-1 overflow-auto"
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.2 }}
         >
           <Outlet />
         </motion.div>
       </main>
 
-      {/* Bottom tab bar — mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-center justify-around px-2 py-2 z-40 safe-area-bottom">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${
-                isActive ? "text-[var(--color-accent)]" : "text-gray-400"
-              }`
-            }
-          >
-            <span className="text-2xl">{item.emoji}</span>
-            <span className="text-xs font-semibold">{item.label}</span>
-          </NavLink>
-        ))}
+      <nav className="darwin-dock fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t px-1 py-2 md:hidden safe-area-bottom" aria-label="Mobile navigation">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 text-[10px] font-bold transition-colors ${
+                  isActive ? "text-[var(--color-accent)]" : "text-gray-400"
+                }`
+              }
+            >
+              <Icon size={20} strokeWidth={2.2} />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-gray-400 hover:text-red-500 transition-all"
+          className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 text-[10px] font-bold text-gray-400 transition-colors hover:text-red-500"
+          aria-label="Log out"
         >
-          <span className="text-2xl">👋</span>
-          <span className="text-xs font-semibold">Logout</span>
+          <LogOut size={20} strokeWidth={2.2} />
+          <span>Log out</span>
         </button>
       </nav>
 
-      {/* AI FAB */}
-      <button
+      <Button
+        variant="primary"
+        iconOnly
         onClick={() => setAiOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[var(--color-primary)] text-white text-2xl shadow-lg hover:scale-110 active:scale-95 transition-transform flex items-center justify-center"
+        className="ai-pet-button fixed bottom-20 right-5 z-50 h-12 w-12 rounded-2xl shadow-xl md:bottom-6 md:right-6"
         aria-label="Open AI assistant"
       >
-        🤖
-      </button>
+        <Bot size={21} />
+      </Button>
 
-      {/* AI Drawer */}
       <AIDrawer open={aiOpen} onClose={() => setAiOpen(false)} />
-
-      {/* Invite Popup */}
       <InvitePopup />
     </div>
   );

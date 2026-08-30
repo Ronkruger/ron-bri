@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Bot, Send, Sparkles, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { aiApi } from "@ronbri/api-client";
 import type { AIChatMessage } from "@ronbri/types";
+import { notification } from "./AppToaster";
 
 interface AIDrawerProps {
   open: boolean;
@@ -21,7 +23,7 @@ const AIDrawer: React.FC<AIDrawerProps> = ({ open, onClose }) => {
     role: "system",
     content: `You are a sweet, helpful AI assistant for a couple named Ron Ron (boyfriend) and BriBri (girlfriend).
 Help them plan dates, suggest romantic activities, answer questions, and be a supportive, cheerful companion.
-Keep responses warm, playful, and concise. Use cute emojis occasionally. 🌸
+Keep responses warm, playful, and concise. Use cute emojis occasionally.
 Current user: ${user?.displayName ?? "unknown"}`,
   };
 
@@ -75,9 +77,10 @@ Current user: ${user?.displayName ?? "unknown"}`,
         }
       }
     } catch (err) {
+      notification.fromError(err, "The AI assistant could not respond. Try again.");
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: "Oops, something went wrong! 😅 Try again?" };
+        updated[updated.length - 1] = { role: "assistant", content: "Oops, something went wrong. Try again?" };
         return updated;
       });
     } finally {
@@ -114,21 +117,21 @@ Current user: ${user?.displayName ?? "unknown"}`,
           >
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="text-2xl">🤖</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-light)] text-[var(--color-accent)]"><Bot size={19} /></div>
               <div className="flex-1">
                 <div className="font-black text-gray-800">AI Assistant</div>
-                <div className="text-xs text-gray-400">Your couples companion 🌸</div>
+                <div className="text-xs text-gray-400">Your couples companion</div>
               </div>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+              <button onClick={onClose} className="ui-icon-button" aria-label="Close AI assistant"><X size={18} /></button>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-gray-400 font-medium mt-8">
-                  <div className="text-5xl mb-3">🌸</div>
+                  <div className="mb-3 flex justify-center text-[var(--color-accent)]"><Sparkles size={34} /></div>
                   <p>Ask me anything!</p>
-                  <p className="text-sm mt-1">Date ideas, questions, anything 💕</p>
+                  <p className="text-sm mt-1">Date ideas, questions, anything</p>
                 </div>
               )}
               {messages.map((msg, i) => (
@@ -163,9 +166,10 @@ Current user: ${user?.displayName ?? "unknown"}`,
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || streaming}
-                  className="w-12 h-12 rounded-2xl bg-[var(--color-primary)] text-white text-xl disabled:opacity-50 hover:opacity-90"
+                  className="ui-icon-button h-12 w-12 border-0 bg-[var(--color-primary)] text-white disabled:opacity-50 hover:opacity-90"
+                  aria-label="Send message"
                 >
-                  ➤
+                  <Send size={18} />
                 </button>
               </div>
             </div>

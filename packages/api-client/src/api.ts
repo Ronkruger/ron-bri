@@ -12,13 +12,22 @@ import type {
   RespondInvitePayload,
   PaginatedMessages,
   AIChatPayload,
+  PublicAccount,
 } from "@ronbri/types";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const authApi = {
+  accounts: () =>
+    apiClient.get<PublicAccount[]>("/auth/accounts").then((r) => r.data),
+
   login: (username: string, password: string) =>
     apiClient.post<AuthResponse>("/auth/login", { username, password }).then((r) => r.data),
+
+  loginMobile: (username: string, password: string) =>
+    apiClient
+      .post<AuthResponse>("/auth/login", { username, password }, { headers: { "x-client-platform": "mobile" } })
+      .then((r) => r.data),
 
   refresh: () =>
     apiClient.post<{ accessToken: string }>("/auth/refresh").then((r) => r.data),
@@ -80,6 +89,9 @@ export const messagesApi = {
 // ─── Upload ───────────────────────────────────────────────────────────────────
 
 export const uploadApi = {
+  status: () =>
+    apiClient.get<{ configured: boolean; reachable: boolean; code: string; message: string }>("/upload/status").then((r) => r.data),
+
   image: (file: File | Blob) => {
     const form = new FormData();
     form.append("image", file);

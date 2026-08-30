@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { Camera, Image as ImageIcon, MessageCircle, Send } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { messagesApi, uploadApi, giphyApi } from "@ronbri/api-client";
 import { getSocket } from "@ronbri/api-client";
@@ -8,6 +9,7 @@ import type { Message, PaginatedMessages } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
 import GifPicker from "../components/GifPicker";
 import EmojiPickerButton from "../components/EmojiPickerButton";
+import { notification } from "../components/AppToaster";
 
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -107,9 +109,15 @@ const ChatPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    const toastId = notification.loading("Uploading image…");
     try {
       const { url } = await uploadApi.image(file);
       sendMessage({ imageUrl: url });
+      notification.dismiss(toastId);
+      notification.success("Image added to your message.");
+    } catch (caughtError) {
+      notification.dismiss(toastId);
+      notification.fromError(caughtError, "Could not upload that image.");
     } finally {
       setUploading(false);
     }
@@ -162,13 +170,12 @@ const ChatPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen bg-gray-50">
       {/* Header */}
       <div className="px-6 py-4 bg-white border-b border-gray-100 flex items-center gap-3">
-        <div className="text-2xl">💬</div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-light)] text-[var(--color-accent)]"><MessageCircle size={18} /></div>
         <div>
           <div className="font-black text-gray-800">Our Chat</div>
           {peerTyping && (
             <div className="text-xs text-[var(--color-primary)] font-medium animate-pulse">
-              {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is typing...{" "}
-              {user?.role === "BOY" ? "💛" : "💙"}
+              {user?.role === "BOY" ? "BriBri" : "Ron Ron"} is typing…
             </div>
           )}
         </div>
@@ -220,7 +227,7 @@ const ChatPage: React.FC = () => {
             title="Take photo"
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors"
           >
-            📸
+            <Camera size={18} />
             <input
               type="file"
               accept="image/*"
@@ -235,7 +242,7 @@ const ChatPage: React.FC = () => {
             title="Choose from gallery"
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 text-lg cursor-pointer hover:bg-gray-200 transition-colors"
           >
-            🖼️
+            <ImageIcon size={18} />
             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </label>
           {/* Text */}
@@ -244,7 +251,7 @@ const ChatPage: React.FC = () => {
               value={content}
               onChange={(e) => handleTyping(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())}
-              placeholder="Type something cute... 💕"
+              placeholder="Write a message…"
               className="w-full rounded-2xl border border-gray-200 px-4 py-3 font-medium outline-none focus:border-[var(--color-primary)] transition-colors"
             />
           </div>
@@ -254,7 +261,7 @@ const ChatPage: React.FC = () => {
             disabled={!content.trim() && !uploading}
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white text-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
           >
-            ➤
+            <Send size={18} />
           </button>
         </div>
       </div>

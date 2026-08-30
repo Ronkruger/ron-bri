@@ -16,6 +16,27 @@ const updateAvatarSchema = z.object({
   avatar: z.string().url(),
 });
 
+// GET /api/auth/accounts
+// Public account choices for the login screen. Never expose passwordHash.
+router.get("/accounts", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const accounts = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        theme: true,
+        avatar: true,
+      },
+      orderBy: { role: "asc" },
+    });
+    res.json(accounts);
+  } catch {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 const issueAccessToken = (userId: string, role: string) => {
   const secret = process.env.JWT_SECRET!;
   return jwt.sign({ userId, role }, secret, { expiresIn: "15m" });
@@ -31,7 +52,7 @@ const isProd = process.env.NODE_ENV === "production";
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProd,
-  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+  sameSite: "lax" as "lax",
   path: "/",
 };
 
@@ -59,6 +80,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
 
     const accessToken = issueAccessToken(user.id, user.role);
     const refreshToken = issueRefreshToken(user.id);
+    const isMobileClient = req.headers["x-client-platform"] === "mobile";
 
     res.cookie("refreshToken", refreshToken, {
       ...COOKIE_OPTIONS,
@@ -66,7 +88,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     });
 
     const { passwordHash: _, ...safeUser } = user;
-    res.json({ user: safeUser, accessToken });
+    res.json(isMobileClient ? { user: safeUser, accessToken, refreshToken } : { user: safeUser, accessToken });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -96,13 +118,14 @@ router.post("/refresh", async (req: Request, res: Response): Promise<void> => {
 
     const newAccessToken = issueAccessToken(user.id, user.role);
     const newRefreshToken = issueRefreshToken(user.id);
+    const isMobileClient = typeof req.headers["x-refresh-token"] === "string";
 
     res.cookie("refreshToken", newRefreshToken, {
       ...COOKIE_OPTIONS,
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ accessToken: newAccessToken });
+    res.json(isMobileClient ? { accessToken: newAccessToken, refreshToken: newRefreshToken } : { accessToken: newAccessToken });
   } catch {
     res.status(401).json({ error: "Unauthorized", message: "Invalid refresh token" });
   }

@@ -1,147 +1,157 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
-  Alert,
-  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { authApi } from "@ronbri/api-client";
+import type { PublicAccount } from "@ronbri/types";
 import { useAuth } from "../contexts/AuthContext";
+import { Icon, InitialAvatar, styles as sharedStyles, useUiTheme } from "../components/ui";
+import { getUiTheme } from "@ronbri/ui-tokens";
+import { mobileNotification } from "../components/toast";
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
-  const [selected, setSelected] = useState<"boy" | "girl" | null>(null);
+  const [accounts, setAccounts] = useState<PublicAccount[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [selected, setSelected] = useState<PublicAccount | null>(null);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const theme = useUiTheme(selected?.role);
+
+  useEffect(() => {
+    let active = true;
+    authApi.accounts()
+      .then((data) => {
+        if (active) setAccounts(data);
+      })
+      .catch((caughtError) => mobileNotification.fromError(caughtError, "Unable to load accounts. Please try again."))
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!selected || !password) return;
     setLoading(true);
     try {
-      const username = selected === "boy" ? "ronron" : "bribri";
-      await login(username, password);
+      await login(selected.username, password);
+      mobileNotification.success(`Welcome back, ${selected.displayName}.`);
       router.replace("/(tabs)");
-    } catch {
-      Alert.alert("Wrong password 💔", "Try again!");
+    } catch (caughtError) {
+      mobileNotification.fromError(caughtError, "That password was not accepted. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>RonBri 💙💛</Text>
-        <Text style={styles.subtitle}>Who are you?</Text>
-
-        <View style={styles.cards}>
-          <TouchableOpacity
-            style={[styles.card, styles.boyCard, selected === "boy" && styles.boyCardSelected]}
-            onPress={() => { setSelected("boy"); setPassword(""); }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.cardEmoji}>💙</Text>
-            <Text style={[styles.cardName, { color: "#1D4ED8" }]}>Ron Ron</Text>
-            <Text style={styles.cardSub}>That's my babe</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.card, styles.girlCard, selected === "girl" && styles.girlCardSelected]}
-            onPress={() => { setSelected("girl"); setPassword(""); }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.cardEmoji}>💛</Text>
-            <Text style={[styles.cardName, { color: "#A16207" }]}>BriBri</Text>
-            <Text style={styles.cardSub}>That's my girl</Text>
-          </TouchableOpacity>
-        </View>
-
-        {selected && (
-          <View style={styles.passwordSection}>
-            <TextInput
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              placeholder={`Password, ${selected === "boy" ? "Ron Ron" : "BriBri"} 🔒`}
-              style={[
-                styles.passwordInput,
-                selected === "boy" ? styles.passwordBoy : styles.passwordGirl,
-              ]}
-              autoFocus
-            />
-            <TouchableOpacity
-              onPress={handleLogin}
-              disabled={loading || !password}
-              style={[
-                styles.loginBtn,
-                selected === "boy" ? styles.loginBtnBoy : styles.loginBtnGirl,
-                (!password || loading) && styles.loginBtnDisabled,
-              ]}
-            >
-              <Text style={styles.loginBtnText}>
-                {loading ? "Logging in..." : "Let me in 🏠"}
-              </Text>
-            </TouchableOpacity>
+    <SafeAreaView style={[page.container, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={page.content} keyboardShouldPersistTaps="handled">
+          <View style={[page.brand, { backgroundColor: theme.accent.soft }]}>
+            <Icon name="heart-outline" size={24} color={theme.accent.primaryStrong} />
           </View>
-        )}
-      </View>
+          <Text style={[page.title, { color: theme.text }]}>Welcome back</Text>
+          <Text style={[page.subtitle, { color: theme.textMuted }]}>Choose your account to enter RonBri.</Text>
+
+          {accountsLoading ? (
+            <ActivityIndicator size="large" color={theme.accent.primaryStrong} />
+          ) : !selected ? (
+            <View style={page.cards}>
+              {accounts.map((account) => {
+                const accountTheme = getUiTheme(theme.mode, account.role === "GIRL" ? "girl" : "boy");
+                return (
+                  <TouchableOpacity
+                    key={account.id}
+                    style={[sharedStyles.surface, sharedStyles.shadow, page.accountCard, { backgroundColor: accountTheme.surfaceRaised, borderColor: accountTheme.accent.border }]}
+                    onPress={() => { setSelected(account); setPassword(""); }}
+                    activeOpacity={0.84}
+                  >
+                    <InitialAvatar name={account.displayName} color={accountTheme.accent.primaryStrong} size={50} />
+                    <View style={page.accountCopy}>
+                      <Text style={[page.accountName, { color: accountTheme.text }]}>{account.displayName}</Text>
+                      <Text style={[page.accountSub, { color: accountTheme.textMuted }]}>{account.username}</Text>
+                    </View>
+                    <Icon name="chevron-right" size={21} color={accountTheme.textMuted} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <View style={[sharedStyles.surface, page.passwordCard, { backgroundColor: theme.surfaceRaised }] }>
+              <View style={page.selectedRow}>
+                <InitialAvatar name={selected.displayName} color={theme.accent.primaryStrong} size={48} />
+                <View>
+                  <Text style={[page.accountName, { color: theme.text }]}>{selected.displayName}</Text>
+                  <Text style={[page.accountSub, { color: theme.textMuted }]}>{selected.username}</Text>
+                </View>
+              </View>
+              <View style={page.inputWrap}>
+                <Icon name="lock-outline" size={19} color={theme.textMuted} />
+                <TextInput
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter your password"
+                  placeholderTextColor={theme.textMuted}
+                  style={[page.input, { color: theme.text }]}
+                  autoFocus
+                  returnKeyType="go"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
+              <TouchableOpacity
+                onPress={handleLogin}
+                disabled={loading || !password}
+                style={[page.loginButton, { backgroundColor: theme.accent.primaryStrong }, (!password || loading) && page.disabled]}
+              >
+                <Text style={page.loginText}>{loading ? "Signing in…" : "Sign in"}</Text>
+                <Icon name="login" size={18} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSelected(null)} style={page.backButton}>
+                <Icon name="arrow-left" size={17} color={theme.textMuted} />
+                <Text style={[page.backText, { color: theme.textMuted }]}>Choose another account</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  content: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  title: { fontSize: 36, fontWeight: "900", color: "#1f2937", marginBottom: 8 },
-  subtitle: { fontSize: 16, color: "#9ca3af", fontWeight: "600", marginBottom: 32 },
-  cards: { flexDirection: "row", gap: 16, width: "100%", marginBottom: 32 },
-  card: {
-    flex: 1,
-    borderRadius: 24,
-    padding: 24,
-    alignItems: "center",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 3,
-    borderColor: "transparent",
-  },
-  boyCard: {},
-  boyCardSelected: { borderColor: "#3B82F6", backgroundColor: "#EFF6FF" },
-  girlCard: {},
-  girlCardSelected: { borderColor: "#EAB308", backgroundColor: "#FEFCE8" },
-  cardEmoji: { fontSize: 48, marginBottom: 8 },
-  cardName: { fontSize: 20, fontWeight: "900" },
-  cardSub: { fontSize: 12, color: "#9ca3af", marginTop: 4, fontWeight: "600" },
-  passwordSection: { width: "100%", gap: 12 },
-  passwordInput: {
-    width: "100%",
-    borderRadius: 16,
-    borderWidth: 2,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-    backgroundColor: "#fff",
-  },
-  passwordBoy: { borderColor: "#93C5FD" },
-  passwordGirl: { borderColor: "#FDE047" },
-  loginBtn: {
-    width: "100%",
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  loginBtnBoy: { backgroundColor: "#3B82F6" },
-  loginBtnGirl: { backgroundColor: "#EAB308" },
-  loginBtnDisabled: { opacity: 0.5 },
-  loginBtnText: { color: "#fff", fontSize: 18, fontWeight: "900" },
+const page = StyleSheet.create({
+  container: { flex: 1 },
+  content: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 22 },
+  brand: { width: 52, height: 52, borderRadius: 18, alignItems: "center", justifyContent: "center", marginBottom: 15 },
+  title: { fontSize: 32, fontWeight: "900", letterSpacing: -0.6, marginBottom: 5 },
+  subtitle: { fontSize: 15, fontWeight: "600", marginBottom: 28, textAlign: "center" },
+  cards: { width: "100%", gap: 12 },
+  accountCard: { width: "100%", flexDirection: "row", alignItems: "center", padding: 14 },
+  accountCopy: { flex: 1, marginLeft: 12 },
+  accountName: { fontSize: 17, fontWeight: "800" },
+  accountSub: { fontSize: 12, fontWeight: "600", marginTop: 3 },
+  passwordCard: { width: "100%", padding: 17, gap: 14 },
+  selectedRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  inputWrap: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 14, borderWidth: 1, borderColor: "rgba(185, 130, 103, .22)", borderRadius: 14 },
+  input: { flex: 1, fontSize: 16, fontWeight: "600" },
+  loginButton: { minHeight: 52, borderRadius: 14, flexDirection: "row", gap: 9, alignItems: "center", justifyContent: "center" },
+  loginText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  disabled: { opacity: 0.5 },
+  backButton: { flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", paddingVertical: 5 },
+  backText: { fontSize: 13, fontWeight: "700" },
 });

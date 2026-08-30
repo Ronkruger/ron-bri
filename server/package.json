@@ -3,15 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prisma-runner.cjs generate",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "prisma generate && tsc",
+    "build": "node scripts/prisma-runner.cjs generate && tsc",
     "start": "node dist/index.js",
-    "db:push": "prisma db push --skip-generate --accept-data-loss",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "node scripts/prisma-runner.cjs db push --skip-generate",
+    "db:generate": "node scripts/prisma-runner.cjs generate",
+    "db:migrate": "node scripts/prisma-runner.cjs migrate dev",
+    "db:migrate:deploy": "node scripts/prisma-runner.cjs migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "node scripts/prisma-runner.cjs studio"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
