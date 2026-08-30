@@ -32,7 +32,11 @@ router.get("/accounts", async (_req: Request, res: Response): Promise<void> => {
       orderBy: { role: "asc" },
     });
     res.json(accounts);
-  } catch {
+  } catch (err) {
+    const diagnostic = err instanceof Error
+      ? { name: err.name, message: err.message }
+      : { name: "UnknownError", message: "Non-error value thrown" };
+    console.error("GET /api/auth/accounts failed", diagnostic);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
