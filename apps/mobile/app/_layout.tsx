@@ -7,6 +7,9 @@ import { AuthProvider } from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../components/toast";
 import { requestNotificationPermission } from "../components/notifications";
+import { configureBaseUrl } from "@ronbri/api-client";
+
+configureBaseUrl(process.env.EXPO_PUBLIC_API_URL);
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },

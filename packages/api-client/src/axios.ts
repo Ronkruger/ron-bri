@@ -12,16 +12,8 @@ type ApiResponse<T> = {
   headers: Headers;
 };
 
-const resolveBaseUrl = (): string => {
-  const browserLocation = (globalThis as { location?: { origin?: unknown } }).location;
-  const browserOrigin = typeof browserLocation?.origin === "string" ? browserLocation.origin : undefined;
-  const raw =
-    (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
-      ? process.env.EXPO_PUBLIC_API_URL
-      : browserOrigin ?? "https://api.ronbri.invalid")
-      .trim();
-
-  let normalized = raw;
+const normalizeBaseUrl = (raw: string): string => {
+  let normalized = raw.trim();
 
   if (!/^https?:\/\//i.test(normalized)) {
     const host = normalized.replace(/^\/+/, "");
@@ -33,7 +25,26 @@ const resolveBaseUrl = (): string => {
   return normalized.replace(/\/+$/, "").replace(/\/api$/i, "");
 };
 
-export const BASE_URL = resolveBaseUrl();
+const resolveBaseUrl = (): string => {
+  const browserLocation = (globalThis as { location?: { origin?: unknown } }).location;
+  const browserOrigin = typeof browserLocation?.origin === "string" ? browserLocation.origin : undefined;
+  const raw =
+    (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
+      ? process.env.EXPO_PUBLIC_API_URL
+      : browserOrigin ?? "https://api.ronbri.invalid")
+      .trim();
+
+  return normalizeBaseUrl(raw);
+};
+
+export let BASE_URL = resolveBaseUrl();
+
+// Native apps configure this explicitly before AuthProvider starts. This is
+// necessary in a monorepo because Metro may not inline Expo env variables in
+// workspace packages imported outside apps/mobile.
+export const configureBaseUrl = (url?: string) => {
+  if (url?.trim()) BASE_URL = normalizeBaseUrl(url);
+};
 
 let accessToken: string | null = null;
 
