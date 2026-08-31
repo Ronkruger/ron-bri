@@ -24,6 +24,7 @@ model User {
   sentInvites      DateInvite[] @relation("SentInvites")
   receivedInvites  DateInvite[] @relation("ReceivedInvites")
   messages         Message[]
+  pushTokens       PushToken[]
 
   @@map("user")
 }
@@ -74,6 +75,19 @@ model Message {
   readAt    DateTime?
 
   @@map("message")
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @db.VarChar(255)
+  platform  String   @db.VarChar(20)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("push_token")
 }
 
 model Relationship {

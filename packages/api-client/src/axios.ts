@@ -3,6 +3,7 @@ type QueryParams = Record<string, string | number | boolean | null | undefined>;
 type RequestOptions = {
   params?: QueryParams;
   headers?: Record<string, string>;
+  data?: unknown;
   _retry?: boolean;
 };
 
@@ -174,5 +175,5 @@ export const apiClient = {
     request<T>("POST", path, body, options),
   patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>("PATCH", path, body, options),
-  delete: <T>(path: string, options?: RequestOptions) => request<T>("DELETE", path, undefined, options),
+  delete: <T>(path: string, options?: RequestOptions) => request<T>("DELETE", path, options?.data, options),
 };

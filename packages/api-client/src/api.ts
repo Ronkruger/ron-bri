@@ -84,6 +84,19 @@ export const messagesApi = {
     apiClient
       .get<PaginatedMessages>("/messages", { params: { cursor, limit } })
       .then((r) => r.data),
+
+  create: (payload: { content?: string; imageUrl?: string; gifUrl?: string }) =>
+    apiClient.post<Message>("/messages", payload).then((r) => r.data),
+};
+
+// ─── Native push notifications ───────────────────────────────────────────────
+
+export const notificationsApi = {
+  register: (token: string, platform: "android" | "ios") =>
+    apiClient.post("/notifications/register", { token, platform }).then((r) => r.data),
+
+  unregister: (token: string) =>
+    apiClient.delete("/notifications/register", { data: { token } }).then((r) => r.data),
 };
 
 // ─── Upload ───────────────────────────────────────────────────────────────────

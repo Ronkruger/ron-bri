@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  AppState,
 } from "react-native";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { messagesApi } from "@ronbri/api-client";
@@ -17,6 +18,7 @@ import { getSocket } from "@ronbri/api-client";
 import type { Message } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { Icon, useUiTheme } from "../../components/ui";
+import { mobileNotification } from "../../components/toast";
 
 export default function ChatScreen() {
   const { user } = useAuth();
@@ -27,13 +29,31 @@ export default function ChatScreen() {
   const flatRef = useRef<FlatList>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>();
   const [typingActive, setTypingActive] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    messagesApi.list(undefined, 50).then((data) => {
+  const loadMessages = useCallback(async () => {
+    try {
+      const data = await messagesApi.list(undefined, 50);
       setMessages(data.messages);
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: false }), 100);
-    });
+    } catch (error) {
+      mobileNotification.fromError(error, "Messages could not be synchronized.");
+    }
   }, []);
+
+  useEffect(() => {
+    void loadMessages();
+    const socket = getSocket();
+    const onActive = (state: string) => {
+      if (state === "active") void loadMessages();
+    };
+    socket.on("connect", loadMessages);
+    const appState = AppState.addEventListener("change", onActive);
+    return () => {
+      socket.off("connect", loadMessages);
+      appState.remove();
+    };
+  }, [loadMessages]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -77,14 +97,22 @@ export default function ChatScreen() {
     }, 1500);
   };
 
-  const sendMessage = () => {
-    if (!content.trim()) return;
-    const socket = getSocket();
-    socket.emit("message:send", { content: content.trim() });
-    setContent("");
-    clearTimeout(typingTimer.current);
-    socket.emit("message:typing", { isTyping: false });
-    setTypingActive(false);
+  const sendMessage = async () => {
+    const body = content.trim();
+    if (!body || sending) return;
+    setSending(true);
+    try {
+      const message = await messagesApi.create({ content: body });
+      setMessages((prev) => prev.some((item) => item.id === message.id) ? prev : [...prev, message]);
+      setContent("");
+      clearTimeout(typingTimer.current);
+      getSocket().emit("message:typing", { isTyping: false });
+      setTypingActive(false);
+    } catch (error) {
+      mobileNotification.fromError(error, "Message not sent. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const primaryColor = theme.accent.primary;
@@ -157,8 +185,8 @@ export default function ChatScreen() {
           />
           <TouchableOpacity
             onPress={sendMessage}
-            disabled={!content.trim()}
-            style={[styles.sendBtn, { backgroundColor: primaryColor }, !content.trim() && styles.sendBtnDisabled]}
+            disabled={!content.trim() || sending}
+            style={[styles.sendBtn, { backgroundColor: primaryColor }, (!content.trim() || sending) && styles.sendBtnDisabled]}
           >
             <Icon name="send-outline" size={19} color="#fff" />
           </TouchableOpacity>

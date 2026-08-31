@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,10 +14,11 @@ import {
   differenceInDays,
   format,
 } from "date-fns";
-import { relationshipApi, calendarApi } from "@ronbri/api-client";
+import { relationshipApi, calendarApi, getSocket } from "@ronbri/api-client";
 import { useAuth } from "../../contexts/AuthContext";
 import type { DateEvent } from "@ronbri/types";
 import { Icon, InitialAvatar, styles as sharedStyles, useUiTheme } from "../../components/ui";
+import { mobileNotification } from "../../components/toast";
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -80,6 +82,19 @@ export default function HomeScreen() {
           )}
         </View>
 
+        <TouchableOpacity
+          activeOpacity={0.84}
+          onPress={() => {
+            getSocket().emit("heart:send");
+            mobileNotification.success(`Heartbeat sent to ${user?.role === "BOY" ? "BriBri" : "Ron Ron"}.`);
+          }}
+          style={[styles.heartbeat, sharedStyles.shadow, { backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}
+        >
+          <Icon name="heart-outline" size={34} color={theme.accent.primaryStrong} />
+          <Text style={[styles.heartbeatTitle, { color: theme.text }]}>Send a heartbeat</Text>
+          <Text style={[styles.heartbeatText, { color: theme.textMuted }]}>Let them know you are thinking of them.</Text>
+        </TouchableOpacity>
+
         {/* Upcoming */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}><Icon name="calendar-month-outline" size={19} color={primaryColor} /> Upcoming dates</Text>
         {upcoming.length === 0 ? (
@@ -125,6 +140,9 @@ const styles = StyleSheet.create({
   counterLabel: { fontSize: 12, fontWeight: "700", marginTop: 2 },
   sinceLabel: { textAlign: "center", color: "#9ca3af", fontSize: 13, fontWeight: "600", marginTop: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "900", marginBottom: 12, flexDirection: "row", alignItems: "center" },
+  heartbeat: { alignItems: "center", borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 24 },
+  heartbeatTitle: { fontSize: 17, fontWeight: "900", marginTop: 8 },
+  heartbeatText: { fontSize: 13, fontWeight: "600", marginTop: 4 },
   emptyBox: { borderRadius: 20, borderWidth: 2, borderStyle: "dashed", borderColor: "#e5e7eb", padding: 24, alignItems: "center" },
   emptyText: { color: "#9ca3af", fontWeight: "600" },
   eventCard: {

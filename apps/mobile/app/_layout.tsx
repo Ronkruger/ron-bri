@@ -6,8 +6,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../components/toast";
-import { requestNotificationPermission } from "../components/notifications";
 import { configureBaseUrl } from "@ronbri/api-client";
+import { AppSyncBridge } from "../components/AppSyncBridge";
+import { NotificationBridge } from "../components/NotificationBridge";
+import { ChatHead } from "../components/ChatHead";
 
 configureBaseUrl(process.env.EXPO_PUBLIC_API_URL);
 
@@ -16,16 +18,15 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  React.useEffect(() => {
-    void requestNotificationPermission();
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <AppSyncBridge />
+            <NotificationBridge />
             <Stack screenOptions={{ headerShown: false }} />
+            <ChatHead />
             <Toast config={toastConfig} />
           </AuthProvider>
         </QueryClientProvider>

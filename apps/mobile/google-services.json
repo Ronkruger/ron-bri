@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "678257193044",
+    "project_id": "ronbri",
+    "storage_bucket": "ronbri.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678257193044:android:1434dafb7caa9686a2fdc1",
+        "android_client_info": {
+          "package_name": "com.ronbri.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDa0KyAUpxcrv-kpfobNzgAh9_ehzYYGpo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

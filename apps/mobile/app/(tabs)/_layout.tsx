@@ -8,6 +8,7 @@ const tabs: Record<string, IconName> = {
   calendar: "calendar-month-outline",
   invites: "email-outline",
   ai: "auto-fix",
+  profile: "account-outline",
 };
 
 export default function TabsLayout() {
@@ -35,6 +36,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="calendar" options={{ title: "Calendar" }} />
       <Tabs.Screen name="invites" options={{ title: "Invites" }} />
       <Tabs.Screen name="ai" options={{ title: "AI" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
 }

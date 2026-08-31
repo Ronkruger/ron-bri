@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import * as SecureStore from "expo-secure-store";
 import type { User } from "@ronbri/types";
-import { authApi, setAccessToken, connectSocket, disconnectSocket, apiClient } from "@ronbri/api-client";
+import { authApi, setAccessToken, connectSocket, disconnectSocket, apiClient, notificationsApi } from "@ronbri/api-client";
+import { getExpoPushToken } from "../components/notifications";
+import { Platform } from "react-native";
 
 interface AuthContextValue {
   user: User | null;
@@ -47,6 +49,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     bootstrap();
   }, [bootstrap]);
 
+  useEffect(() => {
+    if (!user || (Platform.OS !== "android" && Platform.OS !== "ios")) return;
+    const platform: "android" | "ios" = Platform.OS;
+
+    let active = true;
+    void getExpoPushToken().then(async (token) => {
+      if (!active || !token) return;
+      await notificationsApi.register(token, platform);
+      await SecureStore.setItemAsync("expoPushToken", token);
+    }).catch(() => {
+      // Messaging remains usable when notification permission or FCM is absent.
+    });
+
+    return () => { active = false; };
+  }, [user?.id]);
+
   const login = async (username: string, password: string) => {
     const { user: u, accessToken, refreshToken } = await authApi.loginMobile(username, password);
     if (!refreshToken) {
@@ -59,10 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    const pushToken = await SecureStore.getItemAsync("expoPushToken");
+    if (pushToken) {
+      await notificationsApi.unregister(pushToken).catch(() => undefined);
+    }
     await authApi.logout();
     setAccessToken(null);
     setUser(null);
     await SecureStore.deleteItemAsync("refreshToken");
+    await SecureStore.deleteItemAsync("expoPushToken");
     disconnectSocket();
   };
 

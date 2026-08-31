@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
-import { relationshipService } from "../services";
+import { relationshipService, getIo } from "../services";
 import { z } from "zod";
 
 const router = Router();
@@ -33,6 +33,7 @@ router.patch("/", async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
     const rel = await relationshipService.update(parsed.data.startDate);
+    getIo()?.emit("relationship:updated", { relationship: rel });
     res.json(rel);
   } catch {
     res.status(500).json({ error: "Internal Server Error" });

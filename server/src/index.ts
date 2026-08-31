@@ -14,6 +14,7 @@ import uploadRouter from "./routes/upload";
 import aiRouter from "./routes/ai";
 import giphyRouter from "./routes/giphy";
 import relationshipRouter from "./routes/relationship";
+import notificationsRouter from "./routes/notifications";
 
 import { initSocket } from "./socket";
 import { setIo } from "./services";
@@ -75,6 +76,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/giphy", giphyRouter);
 app.use("/api/relationship", relationshipRouter);
+app.use("/api/notifications", notificationsRouter);
 
 // The Render deployment packages the web build with the API, so browser routes,
 // refresh cookies, and Socket.IO all share one HTTPS origin.

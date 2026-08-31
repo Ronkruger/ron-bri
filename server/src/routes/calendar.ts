@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { requireAuth, AuthRequest } from "../middleware/requireAuth";
-import { calendarService } from "../services";
+import { calendarService, getIo } from "../services";
 import { z } from "zod";
 
 const router = Router();
@@ -33,6 +33,7 @@ router.post("/", async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
     const event = await calendarService.create(req.userId!, parsed.data);
+    getIo()?.emit("calendar:created", { event });
     res.status(201).json(event);
   } catch {
     res.status(500).json({ error: "Internal Server Error" });
@@ -52,6 +53,7 @@ router.patch("/:id", async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
     const event = await calendarService.update(req.params.id, req.body);
+    getIo()?.emit("calendar:updated", { event });
     res.json(event);
   } catch {
     res.status(500).json({ error: "Internal Server Error" });
@@ -71,6 +73,7 @@ router.delete("/:id", async (req: AuthRequest, res: Response): Promise<void> => 
       return;
     }
     await calendarService.delete(req.params.id);
+    getIo()?.emit("calendar:deleted", { eventId: req.params.id });
     res.status(204).send();
   } catch {
     res.status(500).json({ error: "Internal Server Error" });

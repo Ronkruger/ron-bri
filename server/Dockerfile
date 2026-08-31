@@ -44,4 +44,6 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3001
 
-CMD ["node", "server/dist/index.js"]
+# Synchronize additive Prisma changes before boot. Prisma refuses destructive
+# changes unless an explicit data-loss flag is supplied, which is never used.
+CMD ["sh", "-c", "npm run db:push --workspace=server && node server/dist/index.js"]

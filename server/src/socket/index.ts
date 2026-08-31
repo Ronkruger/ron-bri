@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
 import http from "http";
 import { socketAuthMiddleware } from "../middleware/socketAuth";
-import { messageService, inviteService } from "../services";
+import { messageService } from "../services";
+import { pushService } from "../services/push.service";
 
 export const initSocket = (httpServer: http.Server): Server => {
   const io = new Server(httpServer, {
@@ -28,6 +29,7 @@ export const initSocket = (httpServer: http.Server): Server => {
           // Emit to receiver and echo to sender
           io.to(`user:${receiverId}`).emit("message:new", { message });
           socket.emit("message:new", { message });
+          void pushService.sendMessage(receiverId, message);
         } catch (err) {
           console.error("message:send error", err);
         }
