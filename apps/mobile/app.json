@@ -18,9 +18,9 @@
       "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon-photo.png",
-        "backgroundColor": "#FFF9F3",
-        "googleServicesFile": "./google-services.json"
-      }
+        "backgroundColor": "#FFF9F3"
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",

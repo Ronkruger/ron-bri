@@ -113,6 +113,12 @@ export const uploadApi = {
       .then((r) => r.data);
   },
 
+  imageNative: (uri: string, name = "image.jpg", type = "image/jpeg") => {
+    const form = new FormData();
+    form.append("image", { uri, name, type } as unknown as Blob);
+    return apiClient.post<{ url: string; publicId: string }>("/upload/image", form).then((r) => r.data);
+  },
+
   delete: (publicId: string) =>
     apiClient.delete(`/upload/${encodeURIComponent(publicId)}`).then((r) => r.data),
 };

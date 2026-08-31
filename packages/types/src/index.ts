@@ -29,6 +29,7 @@ export interface User {
   theme: string;
   avatar: string | null;
   createdAt: string;
+  lastSeenAt: string | null;
 }
 
 export interface PublicAccount {

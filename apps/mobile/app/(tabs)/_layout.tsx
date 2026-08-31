@@ -17,6 +17,7 @@ export default function TabsLayout() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
+          ...(route.name === "chat" ? { display: "none" } : {}),
           backgroundColor: "rgba(255, 253, 249, .96)",
           borderTopColor: "rgba(185, 130, 103, .18)",
           borderTopWidth: 1,

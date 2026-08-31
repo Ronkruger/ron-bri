@@ -1,15 +1,47 @@
-import React from "react";
+import React, { useState } from "react";
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
+import { authApi, resolveMediaUrl, uploadApi } from "@ronbri/api-client";
 import { Icon, InitialAvatar, styles as sharedStyles, useUiTheme } from "../../components/ui";
 import { mobileNotification } from "../../components/toast";
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const router = useRouter();
   const theme = useUiTheme(user?.role);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadAvatar = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      mobileNotification.info("Allow photo access to change your profile image.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]?.uri) return;
+
+    setUploading(true);
+    mobileNotification.info("Uploading profile photo…");
+    try {
+      const asset = result.assets[0];
+      const uploaded = await uploadApi.imageNative(asset.uri, asset.fileName ?? "profile.jpg", asset.mimeType ?? "image/jpeg");
+      await authApi.updateAvatar(uploaded.url);
+      await refreshUser();
+      mobileNotification.success("Profile photo updated.");
+    } catch (error) {
+      mobileNotification.fromError(error, "Could not update your profile photo.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -27,10 +59,14 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.card, sharedStyles.shadow, { backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}>
           {user.avatar ? (
-            <Image source={{ uri: user.avatar }} style={styles.avatar} />
+            <Image source={{ uri: resolveMediaUrl(user.avatar) ?? undefined }} style={styles.avatar} />
           ) : (
             <InitialAvatar name={user.displayName} color={theme.accent.primaryStrong} size={86} />
           )}
+          <TouchableOpacity disabled={uploading} onPress={uploadAvatar} style={[styles.uploadButton, { backgroundColor: theme.accent.primaryStrong }, uploading && { opacity: .55 }]}>
+            <Icon name="camera-outline" size={18} color="#fff" />
+            <Text style={styles.uploadText}>{uploading ? "Uploading…" : "Change profile photo"}</Text>
+          </TouchableOpacity>
           <Text style={[styles.eyebrow, { color: theme.accent.primaryStrong }]}>PROFILE</Text>
           <Text style={[styles.name, { color: theme.text }]}>{user.displayName}</Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your identity inside RonBri.</Text>
@@ -66,6 +102,8 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 100 },
   card: { alignItems: "center", borderRadius: 24, borderWidth: 1, padding: 24 },
   avatar: { width: 86, height: 86, borderRadius: 28 },
+  uploadButton: { minHeight: 44, borderRadius: 14, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
+  uploadText: { color: "#fff", fontSize: 13, fontWeight: "900" },
   eyebrow: { marginTop: 18, fontSize: 11, letterSpacing: 2, fontWeight: "900" },
   name: { marginTop: 8, fontSize: 29, fontWeight: "900" },
   subtitle: { marginTop: 5, fontSize: 14, fontWeight: "600" },

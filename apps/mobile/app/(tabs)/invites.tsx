@@ -17,6 +17,7 @@ import { InviteStatus, InviteType } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { Icon, useUiTheme } from "../../components/ui";
 import { mobileNotification } from "../../components/toast";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const STATUS_COLORS: Record<InviteStatus, { bg: string; text: string }> = {
   [InviteStatus.PENDING]: { bg: "#FEF9C3", text: "#A16207" },
@@ -35,6 +36,7 @@ const INVITE_EMOJIS: Record<string, string> = {
 export default function InvitesScreen() {
   const { user } = useAuth();
   const theme = useUiTheme(user?.role);
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"inbox" | "sent">("inbox");
   const [composerOpen, setComposerOpen] = useState(false);
@@ -90,7 +92,7 @@ export default function InvitesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(10, insets.top) }]}>
         <Text style={[styles.title, { color: theme.text }]}><Icon name="email-outline" size={21} color={primaryColor} /> Invites</Text>
         <TouchableOpacity style={[styles.addButton, { backgroundColor: primaryColor }]} onPress={() => setComposerOpen(true)}>
           <Icon name="plus" size={18} color="#fff" /><Text style={styles.addButtonText}>Send</Text>

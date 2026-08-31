@@ -18,10 +18,12 @@ import type { DateEvent } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { Icon, useUiTheme } from "../../components/ui";
 import { mobileNotification } from "../../components/toast";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CalendarScreen() {
   const { user } = useAuth();
   const theme = useUiTheme(user?.role);
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [editing, setEditing] = useState<DateEvent | null>(null);
@@ -92,7 +94,7 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(10, insets.top) }]}>
         <Text style={[styles.title, { color: theme.text }]}><Icon name="calendar-month-outline" size={21} color={primaryColor} /> Calendar</Text>
         <TouchableOpacity style={[styles.addButton, { backgroundColor: primaryColor }]} onPress={() => openEditor()}>
           <Icon name="plus" size={18} color="#fff" /><Text style={styles.addButtonText}>New</Text>

@@ -15,11 +15,13 @@ import { aiApi } from "@ronbri/api-client";
 import type { AIChatMessage } from "@ronbri/types";
 import { useAuth } from "../../contexts/AuthContext";
 import { Icon, useUiTheme } from "../../components/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { mobileNotification } from "../../components/toast";
 
 export default function AIScreen() {
   const { user } = useAuth();
   const theme = useUiTheme(user?.role);
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -87,7 +89,7 @@ export default function AIScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(10, insets.top) }]}>
         <Text style={[styles.title, { color: theme.text }]}><Icon name="auto-fix" size={20} color={primaryColor} /> AI Companion</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>Ask me anything about your relationship</Text>
       </View>

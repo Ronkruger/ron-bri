@@ -3,6 +3,9 @@ import http from "http";
 import { socketAuthMiddleware } from "../middleware/socketAuth";
 import { messageService } from "../services";
 import { pushService } from "../services/push.service";
+import { prisma } from "../lib/prisma";
+
+const connectedUsers = new Set<string>();
 
 export const initSocket = (httpServer: http.Server): Server => {
   const io = new Server(httpServer, {
@@ -17,6 +20,17 @@ export const initSocket = (httpServer: http.Server): Server => {
   io.on("connection", (socket) => {
     const userId = socket.data.userId as string;
     socket.join(`user:${userId}`);
+    connectedUsers.add(userId);
+    void prisma.user.findMany({ select: { id: true, lastSeenAt: true } }).then((users) => {
+      socket.emit("presence:snapshot", {
+        users: users.map((person) => ({
+          userId: person.id,
+          online: connectedUsers.has(person.id),
+          lastSeenAt: person.lastSeenAt?.toISOString() ?? null,
+        })),
+      });
+    }).catch(() => undefined);
+    socket.broadcast.emit("presence:update", { userId, online: true, lastSeenAt: null });
     console.log(`🔌 Socket connected: ${userId}`);
 
     // ── message:send ──────────────────────────────────────────────────────────
@@ -62,6 +76,10 @@ export const initSocket = (httpServer: http.Server): Server => {
     });
 
     socket.on("disconnect", () => {
+      connectedUsers.delete(userId);
+      const lastSeenAt = new Date().toISOString();
+      void prisma.user.update({ where: { id: userId }, data: { lastSeenAt: new Date(lastSeenAt) } }).catch(() => undefined);
+      socket.broadcast.emit("presence:update", { userId, online: false, lastSeenAt });
       console.log(`🔌 Socket disconnected: ${userId}`);
     });
   });

@@ -47,6 +47,12 @@ export const configureBaseUrl = (url?: string) => {
   if (url?.trim()) BASE_URL = normalizeBaseUrl(url);
 };
 
+export const resolveMediaUrl = (value?: string | null) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${BASE_URL}${value.startsWith("/") ? value : `/${value}`}`;
+};
+
 let accessToken: string | null = null;
 
 export const setAccessToken = (token: string | null) => {
